@@ -1,7 +1,10 @@
 package com.inventory.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,11 +18,16 @@ public class Item {
     private UUID id;
 
     @Column(nullable = false)
+    @NotBlank(message = "Name is required")
     private String name;
 
+    @Column(nullable = false)
+    @NotBlank(message = "Category is required")
     private String category;
 
-    private String status;
+    @Column(nullable = false)
+    @NotNull(message = "Status is required")
+    private String status = "In Stock";
 
     @Lob
     @Column(name = "image_data")

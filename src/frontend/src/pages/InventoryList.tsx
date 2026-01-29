@@ -1,47 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Search, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { itemsApi } from '../services/api';
-import { Item, STATUS_OPTIONS } from '../types/item';
+import { Item, STATUS_OPTIONS, ItemSearchParams } from '../types/item';
 import { SkeletonCard, SkeletonText, Skeleton } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 export default function InventoryList() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const { showToast } = useToast();
 
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await itemsApi.getAll();
-      setItems(data);
+      const params: ItemSearchParams = {
+        page,
+        size: 9,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      };
+      if (search) params.search = search;
+      if (statusFilter) params.status = statusFilter;
+
+      const response = await itemsApi.getAll(params);
+      setItems(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
     } catch (error) {
       console.error('Failed to load items:', error);
+      showToast('Failed to load inventory', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, statusFilter, showToast]);
+
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [search, statusFilter]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
+    setDeletingId(id);
     try {
       await itemsApi.delete(id);
-      setItems(items.filter((item) => item.id !== id));
+      showToast('Item deleted successfully', 'success');
+      loadItems(); // Reload to update pagination
     } catch (error) {
       console.error('Failed to delete item:', error);
+      showToast('Failed to delete item', 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
-
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.category?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = !statusFilter || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -56,7 +78,7 @@ export default function InventoryList() {
     }
   };
 
-  if (loading) {
+  if (loading && items.length === 0) {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
@@ -86,7 +108,7 @@ export default function InventoryList() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="font-display text-3xl text-stone-100 tracking-tight">Inventory</h1>
-          <p className="text-stone-500 mt-1">{items.length} items total</p>
+          <p className="text-stone-500 mt-1">{totalElements} items total</p>
         </div>
         <Link
           to="/inventory/new"
@@ -123,7 +145,7 @@ export default function InventoryList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item, index) => (
+        {items.map((item, index) => (
           <div
             key={item.id}
             className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 backdrop-blur-xl rounded-2xl border border-white/[0.06] shadow-premium overflow-hidden transition-all duration-300 hover:shadow-premium-hover hover:border-white/[0.1] hover:-translate-y-1 group animate-fade-in-up"
@@ -164,9 +186,11 @@ export default function InventoryList() {
                 </Link>
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="inline-flex items-center justify-center px-3 py-2.5 border border-red-400/30 text-red-400 rounded-xl transition-all duration-200 hover:bg-red-400/10 hover:border-red-400/40"
+                  disabled={deletingId === item.id}
+                  aria-label={`Delete ${item.name}`}
+                  className="inline-flex items-center justify-center px-3 py-2.5 border border-red-400/30 text-red-400 rounded-xl transition-all duration-200 hover:bg-red-400/10 hover:border-red-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className={`h-4 w-4 ${deletingId === item.id ? 'animate-pulse' : ''}`} />
                 </button>
               </div>
             </div>
@@ -174,15 +198,40 @@ export default function InventoryList() {
         ))}
       </div>
 
-      {filteredItems.length === 0 && (
+      {items.length === 0 && !loading && (
         <div className="text-center py-16 text-stone-500 animate-fade-in">
           <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
           <p className="text-lg">No items found.</p>
-          {items.length === 0 && (
+          {totalElements === 0 && (
             <Link to="/inventory/new" className="text-amber-400 hover:text-amber-300 transition-colors mt-2 inline-block">
               Add your first item
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="inline-flex items-center px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-stone-300 font-medium rounded-xl transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </button>
+          <span className="text-stone-400">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="inline-flex items-center px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-stone-300 font-medium rounded-xl transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </button>
         </div>
       )}
     </div>

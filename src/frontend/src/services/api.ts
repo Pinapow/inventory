@@ -1,13 +1,13 @@
 import axios from 'axios';
-import { Item, ItemFormData, DashboardStats } from '../types/item';
+import { Item, ItemFormData, DashboardStats, PageResponse, ItemSearchParams } from '../types/item';
 
 const api = axios.create({
   baseURL: '/api',
 });
 
 export const itemsApi = {
-  getAll: async (): Promise<Item[]> => {
-    const response = await api.get<Item[]>('/items');
+  getAll: async (params: ItemSearchParams = {}): Promise<PageResponse<Item>> => {
+    const response = await api.get<PageResponse<Item>>('/items', { params });
     return response.data;
   },
 

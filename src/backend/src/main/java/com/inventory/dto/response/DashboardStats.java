@@ -1,6 +1,7 @@
-package com.inventory.dto;
+package com.inventory.dto.response;
 
 import lombok.Data;
+
 import java.util.Map;
 
 @Data

@@ -1,11 +1,17 @@
 package com.inventory.controller;
 
-import com.inventory.dto.DashboardStats;
-import com.inventory.dto.ItemRequest;
-import com.inventory.dto.ItemResponse;
+import com.inventory.dto.request.ItemRequest;
+import com.inventory.dto.request.ItemSearchCriteria;
+import com.inventory.dto.response.DashboardStats;
+import com.inventory.dto.response.ItemResponse;
+import com.inventory.dto.response.PageResponse;
 import com.inventory.model.Item;
-import com.inventory.service.ItemService;
+import com.inventory.service.IItemService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,24 +19,35 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
 public class ItemController {
 
-    private final ItemService itemService;
+    private final IItemService itemService;
 
-    public ItemController(ItemService itemService) {
+    public ItemController(IItemService itemService) {
         this.itemService = itemService;
     }
 
     @GetMapping("/items")
-    public List<ItemResponse> getAllItems() {
-        return itemService.getAllItems().stream()
-                .map(ItemResponse::fromEntity)
-                .toList();
+    public PageResponse<ItemResponse> getAllItems(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @ModelAttribute ItemSearchCriteria criteria) {
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Item> items = itemService.getAllItems(pageable, criteria);
+
+        Page<ItemResponse> responsePage = items.map(ItemResponse::fromEntity);
+        return PageResponse.from(responsePage);
     }
 
     @GetMapping("/items/{id}")

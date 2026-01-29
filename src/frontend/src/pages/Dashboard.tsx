@@ -4,10 +4,12 @@ import { Package, TrendingUp, AlertTriangle, XCircle } from 'lucide-react';
 import { dashboardApi } from '../services/api';
 import { DashboardStats } from '../types/item';
 import { SkeletonStatCard, SkeletonText, Skeleton } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadStats();
@@ -19,6 +21,7 @@ export default function Dashboard() {
       setStats(data);
     } catch (error) {
       console.error('Failed to load stats:', error);
+      showToast('Failed to load dashboard stats', 'error');
     } finally {
       setLoading(false);
     }

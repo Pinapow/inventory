@@ -5,11 +5,16 @@ import { ArrowLeft, Upload, AlertCircle } from 'lucide-react';
 import { itemsApi } from '../services/api';
 import { ItemFormData, STATUS_OPTIONS } from '../types/item';
 import { Skeleton, SkeletonText } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export default function ItemForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(isEditing);
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +48,7 @@ export default function ItemForm() {
       }
     } catch (error) {
       console.error('Failed to load item:', error);
+      showToast('Failed to load item', 'error');
       navigate('/inventory');
     } finally {
       setLoading(false);
@@ -52,6 +58,14 @@ export default function ItemForm() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        showToast('File size must be less than 10MB', 'error');
+        return;
+      }
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        showToast('Only JPEG, PNG, GIF, and WebP images are allowed', 'error');
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -66,12 +80,15 @@ export default function ItemForm() {
     try {
       if (isEditing && id) {
         await itemsApi.update(id, data, imageFile || undefined);
+        showToast('Item updated successfully', 'success');
       } else {
         await itemsApi.create(data, imageFile || undefined);
+        showToast('Item created successfully', 'success');
       }
       navigate('/inventory');
     } catch (error) {
       console.error('Failed to save item:', error);
+      showToast('Failed to save item. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }

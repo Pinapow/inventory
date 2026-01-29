@@ -1,4 +1,4 @@
-package com.inventory.dto;
+package com.inventory.dto.response;
 
 import com.inventory.model.Item;
 import lombok.Data;
