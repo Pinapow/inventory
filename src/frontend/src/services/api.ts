@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Item, ItemFormData, DashboardStats, PageResponse, ItemSearchParams } from '../types/item';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: '/api/v1',
 });
 
 export const itemsApi = {
@@ -22,7 +22,7 @@ export const itemsApi = {
     if (image) {
       formData.append('image', image);
     }
-    const response = await api.post<Item>('/items', formData);
+    const response = await api.post<Item>('/items/', formData);
     return response.data;
   },
 
@@ -43,7 +43,7 @@ export const itemsApi = {
 
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
-    const response = await api.get<DashboardStats>('/dashboard/stats');
+    const response = await api.get<DashboardStats>('/items/stats');
     return response.data;
   },
 };

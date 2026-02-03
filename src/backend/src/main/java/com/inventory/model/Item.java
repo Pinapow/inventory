@@ -8,6 +8,8 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.inventory.enums.ItemStatus;
+
 @Data
 @Entity
 @Table(name = "items")
@@ -16,6 +18,9 @@ public class Item {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Version
+    private Long version;
 
     @Column(nullable = false)
     @NotBlank(message = "Name is required")
@@ -27,7 +32,8 @@ public class Item {
 
     @Column(nullable = false)
     @NotNull(message = "Status is required")
-    private String status = "In Stock";
+    @Enumerated(EnumType.STRING)
+    private ItemStatus status = ItemStatus.IN_STOCK;
 
     @Lob
     @Column(name = "image_data")

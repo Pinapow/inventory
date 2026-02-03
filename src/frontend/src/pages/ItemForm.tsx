@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Upload, AlertCircle } from 'lucide-react';
 import { itemsApi } from '../services/api';
-import { ItemFormData, STATUS_OPTIONS } from '../types/item';
+import { ItemFormData, STATUS_OPTIONS, STATUS_LABELS } from '../types/item';
 import { Skeleton, SkeletonText } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 
@@ -25,7 +25,7 @@ export default function ItemForm() {
     defaultValues: {
       name: '',
       category: '',
-      status: 'In Stock',
+      status: 'IN_STOCK',
     },
   });
 
@@ -176,7 +176,7 @@ export default function ItemForm() {
               className="w-full px-4 py-3 bg-surface-base/50 border border-white/[0.08] rounded-xl text-stone-100 cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/40 hover:border-white/[0.12]"
             >
               {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status} value={status}>{STATUS_LABELS[status]}</option>
               ))}
             </select>
           </div>

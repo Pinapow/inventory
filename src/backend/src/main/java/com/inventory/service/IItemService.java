@@ -6,24 +6,28 @@ import com.inventory.dto.response.DashboardStats;
 import com.inventory.model.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
+
+import org.springframework.lang.NonNull;
 
 import java.io.IOException;
 import java.util.UUID;
 
+@Validated
 public interface IItemService {
 
     // Read operations
-    Page<Item> getAllItems(Pageable pageable, ItemSearchCriteria criteria);
+    Page<Item> getAllItems(@NonNull Pageable pageable, @NonNull ItemSearchCriteria criteria);
 
-    Item getItemById(UUID id);
+    Item getItemById(@NonNull UUID id);
 
     DashboardStats getDashboardStats();
 
     // Write operations
-    Item createItem(ItemRequest request, MultipartFile image) throws IOException;
+    Item createItem(@NonNull ItemRequest request, MultipartFile image) throws IOException;
 
-    Item updateItem(UUID id, ItemRequest request, MultipartFile image) throws IOException;
+    Item updateItem(@NonNull UUID id, ItemRequest request, MultipartFile image) throws IOException;
 
-    void deleteItem(UUID id);
+    void deleteItem(@NonNull UUID id);
 }

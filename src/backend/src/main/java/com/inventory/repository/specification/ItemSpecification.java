@@ -8,6 +8,8 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.lang.NonNull;
+
 import static org.springframework.util.StringUtils.hasText;
 
 public class ItemSpecification {
@@ -16,24 +18,25 @@ public class ItemSpecification {
         // Utility class
     }
 
+    @NonNull
     public static Specification<Item> withCriteria(ItemSearchCriteria criteria) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (criteria != null) {
-                if (hasText(criteria.getSearch())) {
-                    String pattern = "%" + criteria.getSearch().toLowerCase() + "%";
+                if (hasText(criteria.search())) {
+                    String pattern = "%" + criteria.search().toLowerCase() + "%";
                     predicates.add(cb.or(
                             cb.like(cb.lower(root.get("name")), pattern),
                             cb.like(cb.lower(root.get("category")), pattern)));
                 }
 
-                if (hasText(criteria.getCategory())) {
-                    predicates.add(cb.equal(root.get("category"), criteria.getCategory()));
+                if (hasText(criteria.category())) {
+                    predicates.add(cb.equal(root.get("category"), criteria.category()));
                 }
 
-                if (hasText(criteria.getStatus())) {
-                    predicates.add(cb.equal(root.get("status"), criteria.getStatus()));
+                if (criteria.status() != null) {
+                    predicates.add(cb.equal(root.get("status"), criteria.status()));
                 }
             }
 

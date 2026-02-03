@@ -3,12 +3,16 @@ package com.inventory.service.impl;
 import com.inventory.dto.request.ItemRequest;
 import com.inventory.dto.request.ItemSearchCriteria;
 import com.inventory.dto.response.DashboardStats;
+import com.inventory.enums.ItemStatus;
 import com.inventory.exception.FileValidationException;
 import com.inventory.exception.ItemNotFoundException;
 import com.inventory.model.Item;
 import com.inventory.repository.ItemRepository;
 import com.inventory.repository.specification.ItemSpecification;
 import com.inventory.service.IItemService;
+
+import org.springframework.lang.NonNull;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,12 +39,15 @@ public class ItemServiceImpl implements IItemService {
     }
 
     @Override
-    public Page<Item> getAllItems(Pageable pageable, ItemSearchCriteria criteria) {
+    @Transactional(readOnly = true)
+    public Page<Item> getAllItems(@NonNull Pageable pageable,
+        @NonNull ItemSearchCriteria criteria) {
         return itemRepository.findAll(ItemSpecification.withCriteria(criteria), pageable);
     }
 
     @Override
-    public Item getItemById(UUID id) {
+    @Transactional(readOnly = true)
+    public Item getItemById(@NonNull UUID id) {
         return itemRepository.findById(id)
                 .orElseThrow(() -> new ItemNotFoundException(id));
     }
@@ -49,9 +56,9 @@ public class ItemServiceImpl implements IItemService {
     @Transactional
     public Item createItem(ItemRequest request, MultipartFile image) throws IOException {
         Item item = new Item();
-        item.setName(request.getName());
-        item.setCategory(request.getCategory());
-        item.setStatus(request.getStatus() != null ? request.getStatus() : "In Stock");
+        item.setName(request.name());
+        item.setCategory(request.category());
+        item.setStatus(request.status() != null ? request.status() : ItemStatus.IN_STOCK);
 
         if (image != null && !image.isEmpty()) {
             validateImage(image);
@@ -64,11 +71,11 @@ public class ItemServiceImpl implements IItemService {
 
     @Override
     @Transactional
-    public Item updateItem(UUID id, ItemRequest request, MultipartFile image) throws IOException {
+    public Item updateItem(@NonNull UUID id, ItemRequest request, MultipartFile image) throws IOException {
         Item item = getItemById(id);
-        item.setName(request.getName());
-        item.setCategory(request.getCategory());
-        item.setStatus(request.getStatus() != null ? request.getStatus() : item.getStatus());
+        item.setName(request.name());
+        item.setCategory(request.category());
+        item.setStatus(request.status() != null ? request.status() : item.getStatus());
 
         if (image != null && !image.isEmpty()) {
             validateImage(image);
@@ -81,7 +88,7 @@ public class ItemServiceImpl implements IItemService {
 
     @Override
     @Transactional
-    public void deleteItem(UUID id) {
+    public void deleteItem(@NonNull UUID id) {
         if (!itemRepository.existsById(id)) {
             throw new ItemNotFoundException(id);
         }
@@ -90,22 +97,19 @@ public class ItemServiceImpl implements IItemService {
 
     @Override
     public DashboardStats getDashboardStats() {
-        DashboardStats stats = new DashboardStats();
-        stats.setTotalItems(itemRepository.count());
+        long totalItems = itemRepository.count();
 
         Map<String, Long> statusCounts = itemRepository.countByStatus().stream()
                 .collect(Collectors.toMap(
-                        row -> row[0] != null ? (String) row[0] : "Unknown",
+                        row -> row[0] != null ? ((ItemStatus) row[0]).name() : "Unknown",
                         row -> (Long) row[1]));
-        stats.setCountByStatus(statusCounts);
 
         Map<String, Long> categoryCounts = itemRepository.countByCategory().stream()
                 .collect(Collectors.toMap(
                         row -> row[0] != null ? (String) row[0] : "Uncategorized",
                         row -> (Long) row[1]));
-        stats.setCountByCategory(categoryCounts);
 
-        return stats;
+        return new DashboardStats(totalItems, statusCounts, categoryCounts);
     }
 
     private void validateImage(MultipartFile image) {

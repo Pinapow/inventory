@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Search, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { itemsApi } from '../services/api';
-import { Item, STATUS_OPTIONS, ItemSearchParams } from '../types/item';
+import { Item, STATUS_OPTIONS, ItemSearchParams, formatStatus, STATUS_LABELS } from '../types/item';
 import { SkeletonCard, SkeletonText, Skeleton } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 
@@ -67,12 +67,14 @@ export default function InventoryList() {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'In Stock':
+      case 'IN_STOCK':
         return 'bg-lime-500/10 text-lime-400 border border-lime-500/20';
-      case 'Low Stock':
-        return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-      case 'Out of Stock':
+      case 'OUT_OF_STOCK':
         return 'bg-red-400/10 text-red-400 border border-red-400/20';
+      case 'SOLD':
+        return 'bg-blue-400/10 text-blue-400 border border-blue-400/20';
+      case 'DAMAGED':
+        return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
       default:
         return 'bg-stone-500/10 text-stone-400 border border-stone-500/20';
     }
@@ -138,7 +140,7 @@ export default function InventoryList() {
           >
             <option value="">All Status</option>
             {STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status} value={status}>{STATUS_LABELS[status]}</option>
             ))}
           </select>
         </div>
@@ -172,7 +174,7 @@ export default function InventoryList() {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-lg text-stone-100 tracking-tight">{item.name}</h3>
                 <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium uppercase tracking-wider ${getStatusBadgeClass(item.status)}`}>
-                  {item.status}
+                  {formatStatus(item.status)}
                 </span>
               </div>
               <p className="text-stone-500 text-sm mb-4">{item.category || 'Uncategorized'}</p>

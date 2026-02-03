@@ -1,13 +1,9 @@
 package com.inventory.dto.response;
 
-import lombok.Data;
-
 import java.util.Map;
 
-@Data
-public class DashboardStats {
-
-    private long totalItems;
-    private Map<String, Long> countByStatus;
-    private Map<String, Long> countByCategory;
+public record DashboardStats(
+        long totalItems,
+        Map<String, Long> countByStatus,
+        Map<String, Long> countByCategory) {
 }

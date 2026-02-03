@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, TrendingUp, AlertTriangle, XCircle } from 'lucide-react';
+import { Package, TrendingUp, XCircle, ShoppingCart } from 'lucide-react';
 import { dashboardApi } from '../services/api';
 import { DashboardStats } from '../types/item';
 import { SkeletonStatCard, SkeletonText, Skeleton } from '../components/Skeleton';
@@ -56,9 +56,9 @@ export default function Dashboard() {
 
   const statusCards = [
     { label: 'Total Items', value: stats?.totalItems || 0, icon: Package, color: 'bg-gradient-to-br from-amber-500 to-amber-600', glow: 'shadow-glow-amber' },
-    { label: 'In Stock', value: stats?.countByStatus?.['In Stock'] || 0, icon: TrendingUp, color: 'bg-gradient-to-br from-lime-500 to-lime-600', glow: 'shadow-glow-lime' },
-    { label: 'Low Stock', value: stats?.countByStatus?.['Low Stock'] || 0, icon: AlertTriangle, color: 'bg-gradient-to-br from-amber-400 to-amber-500', glow: 'shadow-glow-amber' },
-    { label: 'Out of Stock', value: stats?.countByStatus?.['Out of Stock'] || 0, icon: XCircle, color: 'bg-gradient-to-br from-red-400 to-red-500', glow: 'shadow-glow-red' },
+    { label: 'In Stock', value: stats?.countByStatus?.['IN_STOCK'] || 0, icon: TrendingUp, color: 'bg-gradient-to-br from-lime-500 to-lime-600', glow: 'shadow-glow-lime' },
+    { label: 'Sold', value: stats?.countByStatus?.['SOLD'] || 0, icon: ShoppingCart, color: 'bg-gradient-to-br from-blue-400 to-blue-500', glow: 'shadow-glow-blue' },
+    { label: 'Out of Stock', value: stats?.countByStatus?.['OUT_OF_STOCK'] || 0, icon: XCircle, color: 'bg-gradient-to-br from-red-400 to-red-500', glow: 'shadow-glow-red' },
   ];
 
   return (

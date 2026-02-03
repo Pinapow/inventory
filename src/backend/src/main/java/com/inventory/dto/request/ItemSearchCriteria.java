@@ -1,11 +1,10 @@
 package com.inventory.dto.request;
 
-import lombok.Data;
+import com.inventory.enums.ItemStatus;
 
-@Data
-public class ItemSearchCriteria {
+public record ItemSearchCriteria(
 
-    private String search;
-    private String category;
-    private String status;
+        String search,
+        String category,
+        ItemStatus status) {
 }

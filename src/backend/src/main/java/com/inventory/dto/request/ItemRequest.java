@@ -1,16 +1,15 @@
 package com.inventory.dto.request;
 
+import com.inventory.enums.ItemStatus;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
-@Data
-public class ItemRequest {
+public record ItemRequest(
 
-    @NotBlank(message = "Name is required")
-    private String name;
+        @NotBlank(message = "Name is required")
+        String name,
 
-    @NotBlank(message = "Category is required")
-    private String category;
+        @NotBlank(message = "Category is required")
+        String category,
 
-    private String status;
-}
+        ItemStatus status
+) {}
