@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package } from 'lucide-react';
+import { LayoutDashboard, List, Package } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,8 +9,8 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
 
   const navItems = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/inventory', label: 'Inventory', icon: Package },
+    { to: '/', label: 'Tableau de bord', icon: LayoutDashboard },
+    { to: '/lists', label: 'Mes Listes', icon: List },
   ];
 
   return (

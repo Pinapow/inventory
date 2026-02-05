@@ -26,13 +26,11 @@ public class ItemSpecification {
             if (criteria != null) {
                 if (hasText(criteria.search())) {
                     String pattern = "%" + criteria.search().toLowerCase() + "%";
-                    predicates.add(cb.or(
-                            cb.like(cb.lower(root.get("name")), pattern),
-                            cb.like(cb.lower(root.get("category")), pattern)));
+                    predicates.add(cb.like(cb.lower(root.get("name")), pattern));
                 }
 
-                if (hasText(criteria.category())) {
-                    predicates.add(cb.equal(root.get("category"), criteria.category()));
+                if (criteria.itemListId() != null) {
+                    predicates.add(cb.equal(root.get("itemList").get("id"), criteria.itemListId()));
                 }
 
                 if (criteria.status() != null) {

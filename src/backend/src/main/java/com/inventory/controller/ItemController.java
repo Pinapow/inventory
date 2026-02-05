@@ -1,5 +1,6 @@
 package com.inventory.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventory.dto.request.ItemRequest;
 import com.inventory.dto.request.ItemSearchCriteria;
 import com.inventory.dto.response.DashboardStats;
@@ -7,7 +8,6 @@ import com.inventory.dto.response.ItemResponse;
 import com.inventory.dto.response.PageResponse;
 import com.inventory.model.Item;
 import com.inventory.service.IItemService;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +27,11 @@ import java.util.UUID;
 public class ItemController {
 
     private final IItemService itemService;
+    private final ObjectMapper objectMapper;
 
-    public ItemController(IItemService itemService) {
+    public ItemController(IItemService itemService, ObjectMapper objectMapper) {
         this.itemService = itemService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -56,10 +58,22 @@ public class ItemController {
         return ItemResponse.fromEntity(itemService.getItemById(id));
     }
 
-    @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @GetMapping("/{id}/image")
+    public ResponseEntity<byte[]> getItemImage(@PathVariable @NonNull UUID id) {
+        Item item = itemService.getItemById(id);
+        if (item.getImageData() == null || item.getImageData().length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(item.getContentType()))
+                .body(item.getImageData());
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ItemResponse> createItem(
-            @RequestPart("data") @Valid @NonNull ItemRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+            @RequestParam("data") @NonNull String data,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+        ItemRequest request = objectMapper.readValue(data, ItemRequest.class);
         Item item = itemService.createItem(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(ItemResponse.fromEntity(item));
     }
@@ -67,8 +81,9 @@ public class ItemController {
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ItemResponse updateItem(
             @PathVariable @NonNull UUID id,
-            @RequestPart("data") @Valid @NonNull ItemRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+            @RequestParam("data") @NonNull String data,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+        ItemRequest request = objectMapper.readValue(data, ItemRequest.class);
         Item item = itemService.updateItem(id, request, image);
         return ItemResponse.fromEntity(item);
     }

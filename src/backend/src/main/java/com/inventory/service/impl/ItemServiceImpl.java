@@ -5,8 +5,11 @@ import com.inventory.dto.request.ItemSearchCriteria;
 import com.inventory.dto.response.DashboardStats;
 import com.inventory.enums.ItemStatus;
 import com.inventory.exception.FileValidationException;
+import com.inventory.exception.ItemListNotFoundException;
 import com.inventory.exception.ItemNotFoundException;
 import com.inventory.model.Item;
+import com.inventory.model.ItemList;
+import com.inventory.repository.ItemListRepository;
 import com.inventory.repository.ItemRepository;
 import com.inventory.repository.specification.ItemSpecification;
 import com.inventory.service.IItemService;
@@ -33,9 +36,11 @@ public class ItemServiceImpl implements IItemService {
             "image/jpeg", "image/png", "image/gif", "image/webp");
 
     private final ItemRepository itemRepository;
+    private final ItemListRepository itemListRepository;
 
-    public ItemServiceImpl(ItemRepository itemRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, ItemListRepository itemListRepository) {
         this.itemRepository = itemRepository;
+        this.itemListRepository = itemListRepository;
     }
 
     @Override
@@ -55,10 +60,14 @@ public class ItemServiceImpl implements IItemService {
     @Override
     @Transactional
     public Item createItem(@NonNull ItemRequest request, MultipartFile image) throws IOException {
+        ItemList itemList = itemListRepository.findById(request.itemListId())
+                .orElseThrow(() -> new ItemListNotFoundException(request.itemListId()));
+
         Item item = new Item();
         item.setName(request.name());
-        item.setCategory(request.category());
-        item.setStatus(request.status() != null ? request.status() : ItemStatus.IN_STOCK);
+        item.setItemList(itemList);
+        item.setStatus(request.status() != null ? request.status() : ItemStatus.TO_PREPARE);
+        item.setStock(request.stock() != null ? request.stock() : 0);
 
         if (image != null && !image.isEmpty()) {
             validateImage(image);
@@ -73,9 +82,14 @@ public class ItemServiceImpl implements IItemService {
     @Transactional
     public Item updateItem(@NonNull UUID id, ItemRequest request, MultipartFile image) throws IOException {
         Item item = getItemById(id);
+
+        ItemList itemList = itemListRepository.findById(request.itemListId())
+                .orElseThrow(() -> new ItemListNotFoundException(request.itemListId()));
+
         item.setName(request.name());
-        item.setCategory(request.category());
+        item.setItemList(itemList);
         item.setStatus(request.status() != null ? request.status() : item.getStatus());
+        item.setStock(request.stock() != null ? request.stock() : item.getStock());
 
         if (image != null && !image.isEmpty()) {
             validateImage(image);

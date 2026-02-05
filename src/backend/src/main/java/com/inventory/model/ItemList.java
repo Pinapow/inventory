@@ -2,20 +2,17 @@ package com.inventory.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-
-import com.inventory.enums.ItemStatus;
 
 @Data
 @Entity
-@Table(name = "items")
-public class Item {
+@Table(name = "item_lists")
+public class ItemList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -28,26 +25,13 @@ public class Item {
     @NotBlank(message = "Name is required")
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_list_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private ItemList itemList;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-    @Column(nullable = false)
-    @NotNull(message = "Status is required")
-    @Enumerated(EnumType.STRING)
-    private ItemStatus status = ItemStatus.TO_PREPARE;
+    private String category;
 
-    @Column(nullable = false)
-    private Integer stock = 0;
-
-    @Lob
-    @Column(name = "image_data")
-    private byte[] imageData;
-
-    @Column(name = "content_type")
-    private String contentType;
+    @OneToMany(mappedBy = "itemList", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Item> items = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -64,5 +48,15 @@ public class Item {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void addItem(Item item) {
+        items.add(item);
+        item.setItemList(this);
+    }
+
+    public void removeItem(Item item) {
+        items.remove(item);
+        item.setItemList(null);
     }
 }

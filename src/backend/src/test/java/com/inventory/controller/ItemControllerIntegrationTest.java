@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventory.dto.request.ItemRequest;
 import com.inventory.enums.ItemStatus;
 import com.inventory.model.Item;
+import com.inventory.model.ItemList;
+import com.inventory.repository.ItemListRepository;
 import com.inventory.repository.ItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,9 +42,20 @@ class ItemControllerIntegrationTest {
     @Autowired
     private ItemRepository itemRepository;
 
+    @Autowired
+    private ItemListRepository itemListRepository;
+
+    private ItemList testList;
+
     @BeforeEach
     void setUp() {
         itemRepository.deleteAll();
+        itemListRepository.deleteAll();
+
+        testList = new ItemList();
+        testList.setName("Test List");
+        testList.setCategory("Electronics");
+        testList = itemListRepository.save(testList);
     }
 
     @Nested
@@ -52,7 +65,7 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should create item and retrieve it")
         void createAndRetrieveItem_fullFlow() throws Exception {
-            ItemRequest request = new ItemRequest("Integration Test Item", "Test Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("Integration Test Item", testList.getId(), ItemStatus.TO_PREPARE, 5);
 
             MockMultipartFile dataPart = new MockMultipartFile(
                     "data", "", "application/json",
@@ -62,8 +75,9 @@ class ItemControllerIntegrationTest {
                             .file(dataPart))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.name").value("Integration Test Item"))
-                    .andExpect(jsonPath("$.category").value("Test Category"))
-                    .andExpect(jsonPath("$.status").value("IN_STOCK"))
+                    .andExpect(jsonPath("$.itemListId").value(testList.getId().toString()))
+                    .andExpect(jsonPath("$.status").value("TO_PREPARE"))
+                    .andExpect(jsonPath("$.stock").value(5))
                     .andReturn();
 
             String responseJson = createResult.getResponse().getContentAsString();
@@ -80,7 +94,7 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should create item with image")
         void createItemWithImage_fullFlow() throws Exception {
-            ItemRequest request = new ItemRequest("Item With Image", "Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("Item With Image", testList.getId(), ItemStatus.TO_PREPARE, 10);
 
             MockMultipartFile dataPart = new MockMultipartFile(
                     "data", "", "application/json",
@@ -109,13 +123,9 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should update existing item")
         void updateItem_fullFlow() throws Exception {
-            Item item = new Item();
-            item.setName("Original Name");
-            item.setCategory("Original Category");
-            item.setStatus(ItemStatus.IN_STOCK);
-            item = itemRepository.save(item);
+            Item item = createTestItem("Original Name", testList, ItemStatus.TO_PREPARE, 5);
 
-            ItemRequest updateRequest = new ItemRequest("Updated Name", "Updated Category", ItemStatus.SOLD);
+            ItemRequest updateRequest = new ItemRequest("Updated Name", testList.getId(), ItemStatus.READY, 15);
             MockMultipartFile dataPart = new MockMultipartFile(
                     "data", "", "application/json",
                     objectMapper.writeValueAsBytes(updateRequest));
@@ -128,12 +138,13 @@ class ItemControllerIntegrationTest {
                             }))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("Updated Name"))
-                    .andExpect(jsonPath("$.category").value("Updated Category"))
-                    .andExpect(jsonPath("$.status").value("SOLD"));
+                    .andExpect(jsonPath("$.status").value("READY"))
+                    .andExpect(jsonPath("$.stock").value(15));
 
             Item updatedItem = itemRepository.findById(item.getId()).orElseThrow();
             assertThat(updatedItem.getName()).isEqualTo("Updated Name");
-            assertThat(updatedItem.getStatus()).isEqualTo(ItemStatus.SOLD);
+            assertThat(updatedItem.getStatus()).isEqualTo(ItemStatus.READY);
+            assertThat(updatedItem.getStock()).isEqualTo(15);
         }
     }
 
@@ -144,11 +155,7 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should delete existing item")
         void deleteItem_fullFlow() throws Exception {
-            Item item = new Item();
-            item.setName("To Delete");
-            item.setCategory("Category");
-            item.setStatus(ItemStatus.IN_STOCK);
-            item = itemRepository.save(item);
+            Item item = createTestItem("To Delete", testList, ItemStatus.TO_PREPARE, 0);
 
             assertThat(itemRepository.count()).isEqualTo(1);
 
@@ -175,26 +182,31 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should filter items by status")
         void searchItems_byStatus() throws Exception {
-            createTestItem("Item 1", "Electronics", ItemStatus.IN_STOCK);
-            createTestItem("Item 2", "Electronics", ItemStatus.SOLD);
-            createTestItem("Item 3", "Clothing", ItemStatus.IN_STOCK);
+            createTestItem("Item 1", testList, ItemStatus.TO_PREPARE, 5);
+            createTestItem("Item 2", testList, ItemStatus.READY, 10);
+            createTestItem("Item 3", testList, ItemStatus.TO_PREPARE, 3);
 
             mockMvc.perform(get("/api/v1/items")
-                            .param("status", "IN_STOCK"))
+                            .param("status", "TO_PREPARE"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(2))
-                    .andExpect(jsonPath("$.content[0].status").value("IN_STOCK"));
+                    .andExpect(jsonPath("$.content[0].status").value("TO_PREPARE"));
         }
 
         @Test
-        @DisplayName("should filter items by category")
-        void searchItems_byCategory() throws Exception {
-            createTestItem("Item 1", "Electronics", ItemStatus.IN_STOCK);
-            createTestItem("Item 2", "Electronics", ItemStatus.SOLD);
-            createTestItem("Item 3", "Clothing", ItemStatus.IN_STOCK);
+        @DisplayName("should filter items by list")
+        void searchItems_byList() throws Exception {
+            ItemList anotherList = new ItemList();
+            anotherList.setName("Another List");
+            anotherList.setCategory("Clothing");
+            anotherList = itemListRepository.save(anotherList);
+
+            createTestItem("Item 1", testList, ItemStatus.TO_PREPARE, 5);
+            createTestItem("Item 2", testList, ItemStatus.READY, 10);
+            createTestItem("Item 3", anotherList, ItemStatus.TO_PREPARE, 3);
 
             mockMvc.perform(get("/api/v1/items")
-                            .param("category", "Electronics"))
+                            .param("itemListId", testList.getId().toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(2));
         }
@@ -202,9 +214,9 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should search items by name")
         void searchItems_bySearch() throws Exception {
-            createTestItem("Laptop", "Electronics", ItemStatus.IN_STOCK);
-            createTestItem("Phone", "Electronics", ItemStatus.IN_STOCK);
-            createTestItem("T-Shirt", "Clothing", ItemStatus.IN_STOCK);
+            createTestItem("Laptop", testList, ItemStatus.TO_PREPARE, 5);
+            createTestItem("Phone", testList, ItemStatus.TO_PREPARE, 10);
+            createTestItem("T-Shirt", testList, ItemStatus.TO_PREPARE, 20);
 
             mockMvc.perform(get("/api/v1/items")
                             .param("search", "Laptop"))
@@ -221,17 +233,22 @@ class ItemControllerIntegrationTest {
         @Test
         @DisplayName("should return correct statistics")
         void dashboardStats_reflectsData() throws Exception {
-            createTestItem("Item 1", "Electronics", ItemStatus.IN_STOCK);
-            createTestItem("Item 2", "Electronics", ItemStatus.SOLD);
-            createTestItem("Item 3", "Clothing", ItemStatus.IN_STOCK);
-            createTestItem("Item 4", "Clothing", ItemStatus.OUT_OF_STOCK);
+            ItemList clothingList = new ItemList();
+            clothingList.setName("Clothing List");
+            clothingList.setCategory("Clothing");
+            clothingList = itemListRepository.save(clothingList);
+
+            createTestItem("Item 1", testList, ItemStatus.TO_PREPARE, 5);
+            createTestItem("Item 2", testList, ItemStatus.READY, 10);
+            createTestItem("Item 3", clothingList, ItemStatus.TO_PREPARE, 3);
+            createTestItem("Item 4", clothingList, ItemStatus.PENDING, 0);
 
             mockMvc.perform(get("/api/v1/items/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalItems").value(4))
-                    .andExpect(jsonPath("$.countByStatus.IN_STOCK").value(2))
-                    .andExpect(jsonPath("$.countByStatus.SOLD").value(1))
-                    .andExpect(jsonPath("$.countByStatus.OUT_OF_STOCK").value(1))
+                    .andExpect(jsonPath("$.countByStatus.TO_PREPARE").value(2))
+                    .andExpect(jsonPath("$.countByStatus.READY").value(1))
+                    .andExpect(jsonPath("$.countByStatus.PENDING").value(1))
                     .andExpect(jsonPath("$.countByCategory.Electronics").value(2))
                     .andExpect(jsonPath("$.countByCategory.Clothing").value(2));
         }
@@ -245,11 +262,12 @@ class ItemControllerIntegrationTest {
         }
     }
 
-    private Item createTestItem(String name, String category, ItemStatus status) {
+    private Item createTestItem(String name, ItemList list, ItemStatus status, Integer stock) {
         Item item = new Item();
         item.setName(name);
-        item.setCategory(category);
+        item.setItemList(list);
         item.setStatus(status);
+        item.setStock(stock);
         return itemRepository.save(item);
     }
 }

@@ -7,6 +7,7 @@ import com.inventory.dto.response.DashboardStats;
 import com.inventory.enums.ItemStatus;
 import com.inventory.exception.ItemNotFoundException;
 import com.inventory.model.Item;
+import com.inventory.model.ItemList;
 import com.inventory.service.IItemService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,16 +47,26 @@ class ItemControllerTest {
     private IItemService itemService;
 
     private Item testItem;
+    private ItemList testList;
     private UUID testId;
+    private UUID testListId;
 
     @BeforeEach
     void setUp() {
         testId = UUID.randomUUID();
+        testListId = UUID.randomUUID();
+
+        testList = new ItemList();
+        testList.setId(testListId);
+        testList.setName("Test List");
+        testList.setCategory("Electronics");
+
         testItem = new Item();
         testItem.setId(testId);
         testItem.setName("Test Item");
-        testItem.setCategory("Electronics");
-        testItem.setStatus(ItemStatus.IN_STOCK);
+        testItem.setItemList(testList);
+        testItem.setStatus(ItemStatus.TO_PREPARE);
+        testItem.setStock(10);
     }
 
     @Nested
@@ -103,7 +114,7 @@ class ItemControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(testId.toString()))
                     .andExpect(jsonPath("$.name").value("Test Item"))
-                    .andExpect(jsonPath("$.status").value("IN_STOCK"));
+                    .andExpect(jsonPath("$.status").value("TO_PREPARE"));
         }
 
         @Test
@@ -125,7 +136,7 @@ class ItemControllerTest {
         @Test
         @DisplayName("should create item with valid request")
         void createItem_validRequest_returns201() throws Exception {
-            ItemRequest request = new ItemRequest("New Item", "Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("New Item", testListId, ItemStatus.TO_PREPARE, 5);
             when(itemService.createItem(any(ItemRequest.class), any())).thenReturn(testItem);
 
             MockMultipartFile dataPart = new MockMultipartFile(
@@ -141,7 +152,7 @@ class ItemControllerTest {
         @Test
         @DisplayName("should create item with image")
         void createItem_withImage_returns201() throws Exception {
-            ItemRequest request = new ItemRequest("New Item", "Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("New Item", testListId, ItemStatus.TO_PREPARE, 10);
             when(itemService.createItem(any(ItemRequest.class), any())).thenReturn(testItem);
 
             MockMultipartFile dataPart = new MockMultipartFile(
@@ -164,12 +175,13 @@ class ItemControllerTest {
         @Test
         @DisplayName("should update existing item")
         void updateItem_existingId_returnsUpdatedItem() throws Exception {
-            ItemRequest request = new ItemRequest("Updated Item", "Updated Category", ItemStatus.SOLD);
+            ItemRequest request = new ItemRequest("Updated Item", testListId, ItemStatus.READY, 20);
             Item updatedItem = new Item();
             updatedItem.setId(testId);
             updatedItem.setName("Updated Item");
-            updatedItem.setCategory("Updated Category");
-            updatedItem.setStatus(ItemStatus.SOLD);
+            updatedItem.setItemList(testList);
+            updatedItem.setStatus(ItemStatus.READY);
+            updatedItem.setStock(20);
 
             when(itemService.updateItem(eq(testId), any(ItemRequest.class), any())).thenReturn(updatedItem);
 
@@ -185,7 +197,7 @@ class ItemControllerTest {
                             }))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("Updated Item"))
-                    .andExpect(jsonPath("$.status").value("SOLD"));
+                    .andExpect(jsonPath("$.status").value("READY"));
         }
     }
 
@@ -222,7 +234,7 @@ class ItemControllerTest {
         void getDashboardStats_returnsStats() throws Exception {
             DashboardStats stats = new DashboardStats(
                     10L,
-                    Map.of("IN_STOCK", 5L, "SOLD", 3L, "OUT_OF_STOCK", 2L),
+                    Map.of("TO_PREPARE", 5L, "READY", 3L, "PENDING", 2L),
                     Map.of("Electronics", 6L, "Clothing", 4L)
             );
             when(itemService.getDashboardStats()).thenReturn(stats);
@@ -230,7 +242,7 @@ class ItemControllerTest {
             mockMvc.perform(get("/api/v1/items/stats"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalItems").value(10))
-                    .andExpect(jsonPath("$.countByStatus.IN_STOCK").value(5))
+                    .andExpect(jsonPath("$.countByStatus.TO_PREPARE").value(5))
                     .andExpect(jsonPath("$.countByCategory.Electronics").value(6));
         }
     }

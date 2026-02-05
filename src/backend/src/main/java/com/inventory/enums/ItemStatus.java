@@ -1,8 +1,9 @@
 package com.inventory.enums;
 
 public enum ItemStatus {
-    IN_STOCK,
-    OUT_OF_STOCK,
-    SOLD,
-    DAMAGED;
+    TO_PREPARE,
+    TO_VERIFY,
+    PENDING,
+    READY,
+    ARCHIVED;
 }

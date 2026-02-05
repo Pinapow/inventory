@@ -4,8 +4,11 @@ import com.inventory.dto.request.ItemRequest;
 import com.inventory.dto.request.ItemSearchCriteria;
 import com.inventory.dto.response.DashboardStats;
 import com.inventory.enums.ItemStatus;
+import com.inventory.exception.ItemListNotFoundException;
 import com.inventory.exception.ItemNotFoundException;
 import com.inventory.model.Item;
+import com.inventory.model.ItemList;
+import com.inventory.repository.ItemListRepository;
 import com.inventory.repository.ItemRepository;
 import com.inventory.service.impl.ItemServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,20 +43,33 @@ class ItemServiceImplTest {
     @Mock
     private ItemRepository itemRepository;
 
+    @Mock
+    private ItemListRepository itemListRepository;
+
     @InjectMocks
     private ItemServiceImpl itemService;
 
     private Item testItem;
+    private ItemList testList;
     private UUID testId;
+    private UUID testListId;
 
     @BeforeEach
     void setUp() {
         testId = UUID.randomUUID();
+        testListId = UUID.randomUUID();
+
+        testList = new ItemList();
+        testList.setId(testListId);
+        testList.setName("Test List");
+        testList.setCategory("Electronics");
+
         testItem = new Item();
         testItem.setId(testId);
         testItem.setName("Test Item");
-        testItem.setCategory("Electronics");
-        testItem.setStatus(ItemStatus.IN_STOCK);
+        testItem.setItemList(testList);
+        testItem.setStatus(ItemStatus.TO_PREPARE);
+        testItem.setStock(10);
     }
 
     @Nested
@@ -111,7 +127,8 @@ class ItemServiceImplTest {
         @Test
         @DisplayName("should create item with valid request")
         void createItem_validRequest_createsItem() throws IOException {
-            ItemRequest request = new ItemRequest("New Item", "Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("New Item", testListId, ItemStatus.TO_PREPARE, 5);
+            when(itemListRepository.findById(testListId)).thenReturn(Optional.of(testList));
             when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> {
                 Item saved = invocation.getArgument(0);
                 saved.setId(UUID.randomUUID());
@@ -121,29 +138,44 @@ class ItemServiceImplTest {
             Item result = itemService.createItem(request, null);
 
             assertThat(result.getName()).isEqualTo("New Item");
-            assertThat(result.getCategory()).isEqualTo("Category");
-            assertThat(result.getStatus()).isEqualTo(ItemStatus.IN_STOCK);
+            assertThat(result.getItemList()).isEqualTo(testList);
+            assertThat(result.getStatus()).isEqualTo(ItemStatus.TO_PREPARE);
+            assertThat(result.getStock()).isEqualTo(5);
             verify(itemRepository).save(any(Item.class));
         }
 
         @Test
         @DisplayName("should create item with default status when not provided")
         void createItem_noStatus_usesDefaultStatus() throws IOException {
-            ItemRequest request = new ItemRequest("New Item", "Category", null);
+            ItemRequest request = new ItemRequest("New Item", testListId, null, null);
+            when(itemListRepository.findById(testListId)).thenReturn(Optional.of(testList));
             when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             Item result = itemService.createItem(request, null);
 
-            assertThat(result.getStatus()).isEqualTo(ItemStatus.IN_STOCK);
+            assertThat(result.getStatus()).isEqualTo(ItemStatus.TO_PREPARE);
+            assertThat(result.getStock()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("should throw exception when list not found")
+        void createItem_listNotFound_throwsException() {
+            UUID nonExistingListId = UUID.randomUUID();
+            ItemRequest request = new ItemRequest("New Item", nonExistingListId, ItemStatus.TO_PREPARE, 5);
+            when(itemListRepository.findById(nonExistingListId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> itemService.createItem(request, null))
+                    .isInstanceOf(ItemListNotFoundException.class);
         }
 
         @Test
         @DisplayName("should store image data when provided")
         void createItem_withImage_storesImageData() throws IOException {
-            ItemRequest request = new ItemRequest("New Item", "Category", ItemStatus.IN_STOCK);
+            ItemRequest request = new ItemRequest("New Item", testListId, ItemStatus.TO_PREPARE, 10);
             MockMultipartFile image = new MockMultipartFile(
                     "image", "test.jpg", "image/jpeg", "test image content".getBytes());
 
+            when(itemListRepository.findById(testListId)).thenReturn(Optional.of(testList));
             when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             Item result = itemService.createItem(request, image);
@@ -161,28 +193,31 @@ class ItemServiceImplTest {
         @Test
         @DisplayName("should update existing item")
         void updateItem_existingId_updatesItem() throws IOException {
-            ItemRequest request = new ItemRequest("Updated Name", "Updated Category", ItemStatus.SOLD);
+            ItemRequest request = new ItemRequest("Updated Name", testListId, ItemStatus.READY, 20);
             when(itemRepository.findById(testId)).thenReturn(Optional.of(testItem));
+            when(itemListRepository.findById(testListId)).thenReturn(Optional.of(testList));
             when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             Item result = itemService.updateItem(testId, request, null);
 
             assertThat(result.getName()).isEqualTo("Updated Name");
-            assertThat(result.getCategory()).isEqualTo("Updated Category");
-            assertThat(result.getStatus()).isEqualTo(ItemStatus.SOLD);
+            assertThat(result.getItemList()).isEqualTo(testList);
+            assertThat(result.getStatus()).isEqualTo(ItemStatus.READY);
+            assertThat(result.getStock()).isEqualTo(20);
         }
 
         @Test
         @DisplayName("should keep existing status when not provided in request")
         void updateItem_noStatus_keepsExistingStatus() throws IOException {
-            testItem.setStatus(ItemStatus.DAMAGED);
-            ItemRequest request = new ItemRequest("Updated Name", "Updated Category", null);
+            testItem.setStatus(ItemStatus.ARCHIVED);
+            ItemRequest request = new ItemRequest("Updated Name", testListId, null, null);
             when(itemRepository.findById(testId)).thenReturn(Optional.of(testItem));
+            when(itemListRepository.findById(testListId)).thenReturn(Optional.of(testList));
             when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             Item result = itemService.updateItem(testId, request, null);
 
-            assertThat(result.getStatus()).isEqualTo(ItemStatus.DAMAGED);
+            assertThat(result.getStatus()).isEqualTo(ItemStatus.ARCHIVED);
         }
     }
 
@@ -221,9 +256,9 @@ class ItemServiceImplTest {
         void getDashboardStats_returnsStats() {
             when(itemRepository.count()).thenReturn(10L);
             when(itemRepository.countByStatus()).thenReturn(List.of(
-                    new Object[]{ItemStatus.IN_STOCK, 5L},
-                    new Object[]{ItemStatus.SOLD, 3L},
-                    new Object[]{ItemStatus.OUT_OF_STOCK, 2L}
+                    new Object[]{ItemStatus.TO_PREPARE, 5L},
+                    new Object[]{ItemStatus.READY, 3L},
+                    new Object[]{ItemStatus.PENDING, 2L}
             ));
             when(itemRepository.countByCategory()).thenReturn(List.of(
                     new Object[]{"Electronics", 6L},
@@ -233,8 +268,8 @@ class ItemServiceImplTest {
             DashboardStats stats = itemService.getDashboardStats();
 
             assertThat(stats.totalItems()).isEqualTo(10L);
-            assertThat(stats.countByStatus()).containsEntry("IN_STOCK", 5L);
-            assertThat(stats.countByStatus()).containsEntry("SOLD", 3L);
+            assertThat(stats.countByStatus()).containsEntry("TO_PREPARE", 5L);
+            assertThat(stats.countByStatus()).containsEntry("READY", 3L);
             assertThat(stats.countByCategory()).containsEntry("Electronics", 6L);
         }
     }

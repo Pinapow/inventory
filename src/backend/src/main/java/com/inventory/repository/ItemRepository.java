@@ -15,6 +15,6 @@ public interface ItemRepository extends JpaRepository<Item, UUID>, JpaSpecificat
     @Query("SELECT i.status, COUNT(i) FROM Item i GROUP BY i.status")
     List<Object[]> countByStatus();
 
-    @Query("SELECT i.category, COUNT(i) FROM Item i GROUP BY i.category")
+    @Query("SELECT i.itemList.category, COUNT(i) FROM Item i GROUP BY i.itemList.category")
     List<Object[]> countByCategory();
 }

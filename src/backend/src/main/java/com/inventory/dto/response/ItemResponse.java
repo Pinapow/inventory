@@ -3,16 +3,16 @@ package com.inventory.dto.response;
 import com.inventory.model.Item;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.UUID;
 
 
 public record ItemResponse(
         UUID id,
         String name,
-        String category,
+        UUID itemListId,
         String status,
-        String imageBase64,
+        Integer stock,
+        boolean hasImage,
         String contentType,
         LocalDateTime createdAt,
         LocalDateTime updatedAt) {
@@ -21,9 +21,10 @@ public record ItemResponse(
         return new ItemResponse(
                 item.getId(),
                 item.getName(),
-                item.getCategory(),
+                item.getItemList() != null ? item.getItemList().getId() : null,
                 item.getStatus() != null ? item.getStatus().name() : null,
-                item.getImageData() != null ? Base64.getEncoder().encodeToString(item.getImageData()) : null,
+                item.getStock(),
+                item.getImageData() != null && item.getImageData().length > 0,
                 item.getContentType(),
                 item.getCreatedAt(),
                 item.getUpdatedAt());

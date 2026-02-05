@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, TrendingUp, XCircle, ShoppingCart } from 'lucide-react';
+import { Package, Clock, CheckCircle, Search, Archive } from 'lucide-react';
 import { dashboardApi } from '../services/api';
 import { DashboardStats } from '../types/item';
 import { SkeletonStatCard, SkeletonText, Skeleton } from '../components/Skeleton';
@@ -21,7 +21,7 @@ export default function Dashboard() {
       setStats(data);
     } catch (error) {
       console.error('Failed to load stats:', error);
-      showToast('Failed to load dashboard stats', 'error');
+      showToast('Échec du chargement des statistiques', 'error');
     } finally {
       setLoading(false);
     }
@@ -34,8 +34,8 @@ export default function Dashboard() {
           <SkeletonText className="w-32 h-9 mb-2" />
           <SkeletonText className="w-48" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          {[...Array(5)].map((_, i) => (
             <SkeletonStatCard key={i} />
           ))}
         </div>
@@ -55,20 +55,21 @@ export default function Dashboard() {
   }
 
   const statusCards = [
-    { label: 'Total Items', value: stats?.totalItems || 0, icon: Package, color: 'bg-gradient-to-br from-amber-500 to-amber-600', glow: 'shadow-glow-amber' },
-    { label: 'In Stock', value: stats?.countByStatus?.['IN_STOCK'] || 0, icon: TrendingUp, color: 'bg-gradient-to-br from-lime-500 to-lime-600', glow: 'shadow-glow-lime' },
-    { label: 'Sold', value: stats?.countByStatus?.['SOLD'] || 0, icon: ShoppingCart, color: 'bg-gradient-to-br from-blue-400 to-blue-500', glow: 'shadow-glow-blue' },
-    { label: 'Out of Stock', value: stats?.countByStatus?.['OUT_OF_STOCK'] || 0, icon: XCircle, color: 'bg-gradient-to-br from-red-400 to-red-500', glow: 'shadow-glow-red' },
+    { label: 'Total articles', value: stats?.totalItems || 0, icon: Package, color: 'bg-gradient-to-br from-amber-500 to-amber-600', glow: 'shadow-glow-amber' },
+    { label: 'À préparer', value: stats?.countByStatus?.['TO_PREPARE'] || 0, icon: Clock, color: 'bg-gradient-to-br from-amber-400 to-amber-500', glow: 'shadow-glow-amber' },
+    { label: 'À vérifier', value: stats?.countByStatus?.['TO_VERIFY'] || 0, icon: Search, color: 'bg-gradient-to-br from-blue-400 to-blue-500', glow: 'shadow-glow-blue' },
+    { label: 'Prêt', value: stats?.countByStatus?.['READY'] || 0, icon: CheckCircle, color: 'bg-gradient-to-br from-lime-500 to-lime-600', glow: 'shadow-glow-lime' },
+    { label: 'Archivé', value: stats?.countByStatus?.['ARCHIVED'] || 0, icon: Archive, color: 'bg-gradient-to-br from-stone-400 to-stone-500', glow: '' },
   ];
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-display text-3xl text-stone-100 tracking-tight">Dashboard</h1>
-        <p className="text-stone-400 mt-1">Overview of your inventory</p>
+        <h1 className="font-display text-3xl text-stone-100 tracking-tight">Tableau de bord</h1>
+        <p className="text-stone-400 mt-1">Aperçu de votre inventaire</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {statusCards.map((card, index) => (
           <div
             key={card.label}
@@ -90,7 +91,7 @@ export default function Dashboard() {
 
       {stats && Object.keys(stats.countByCategory).length > 0 && (
         <div className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 backdrop-blur-xl rounded-2xl border border-white/[0.06] shadow-premium p-6 animate-fade-in">
-          <h2 className="text-lg font-semibold text-stone-100 mb-4 tracking-tight">Items by Category</h2>
+          <h2 className="text-lg font-semibold text-stone-100 mb-4 tracking-tight">Articles par catégorie</h2>
           <div className="space-y-2">
             {Object.entries(stats.countByCategory).map(([category, count]) => (
               <div key={category} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-white/[0.03] transition-colors duration-200">
@@ -106,10 +107,10 @@ export default function Dashboard() {
 
       <div className="mt-8">
         <Link
-          to="/inventory"
+          to="/lists"
           className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-surface-base font-semibold rounded-xl shadow-glow-amber transition-all duration-200 hover:from-amber-400 hover:to-amber-500 hover:-translate-y-0.5 active:translate-y-0"
         >
-          View All Items
+          Voir mes listes
         </Link>
       </div>
     </div>

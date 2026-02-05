@@ -1,9 +1,45 @@
 import axios from 'axios';
-import { Item, ItemFormData, DashboardStats, PageResponse, ItemSearchParams } from '../types/item';
+import {
+  Item,
+  ItemFormData,
+  DashboardStats,
+  PageResponse,
+  ItemSearchParams,
+  ItemList,
+  ItemListWithItems,
+  ItemListFormData,
+  ItemListSearchParams
+} from '../types/item';
 
 const api = axios.create({
   baseURL: '/api/v1',
 });
+
+export const listsApi = {
+  getAll: async (params: ItemListSearchParams = {}): Promise<PageResponse<ItemList>> => {
+    const response = await api.get<PageResponse<ItemList>>('/lists', { params });
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<ItemListWithItems> => {
+    const response = await api.get<ItemListWithItems>(`/lists/${id}`);
+    return response.data;
+  },
+
+  create: async (data: ItemListFormData): Promise<ItemList> => {
+    const response = await api.post<ItemList>('/lists', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: ItemListFormData): Promise<ItemList> => {
+    const response = await api.patch<ItemList>(`/lists/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/lists/${id}`);
+  },
+};
 
 export const itemsApi = {
   getAll: async (params: ItemSearchParams = {}): Promise<PageResponse<Item>> => {
@@ -18,17 +54,17 @@ export const itemsApi = {
 
   create: async (data: ItemFormData, image?: File): Promise<Item> => {
     const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    formData.append('data', JSON.stringify(data));
     if (image) {
       formData.append('image', image);
     }
-    const response = await api.post<Item>('/items/', formData);
+    const response = await api.post<Item>('/items', formData);
     return response.data;
   },
 
   update: async (id: string, data: ItemFormData, image?: File): Promise<Item> => {
     const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    formData.append('data', JSON.stringify(data));
     if (image) {
       formData.append('image', image);
     }

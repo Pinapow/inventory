@@ -1,18 +1,44 @@
+export interface ItemList {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  itemCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ItemListWithItems extends ItemList {
+  items: Item[];
+}
+
+export interface ItemListFormData {
+  name: string;
+  description?: string;
+  category?: string;
+}
+
 export interface Item {
   id: string;
   name: string;
-  category: string;
+  itemListId: string;
   status: string;
-  imageBase64?: string;
+  stock: number;
+  hasImage: boolean;
   contentType?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export const getItemImageUrl = (itemId: string): string => {
+  return `/api/v1/items/${itemId}/image`;
+};
+
 export interface ItemFormData {
   name: string;
-  category: string;
+  itemListId: string;
   status: string;
+  stock: number;
 }
 
 export interface DashboardStats {
@@ -37,17 +63,25 @@ export interface ItemSearchParams {
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
   search?: string;
-  category?: string;
+  itemListId?: string;
   status?: string;
 }
 
-export const STATUS_OPTIONS = ['IN_STOCK', 'OUT_OF_STOCK', 'SOLD', 'DAMAGED'] as const;
+export interface ItemListSearchParams {
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+export const STATUS_OPTIONS = ['TO_PREPARE', 'TO_VERIFY', 'PENDING', 'READY', 'ARCHIVED'] as const;
 
 export const STATUS_LABELS: Record<string, string> = {
-  IN_STOCK: 'In Stock',
-  OUT_OF_STOCK: 'Out of Stock',
-  SOLD: 'Sold',
-  DAMAGED: 'Damaged',
+  TO_PREPARE: 'À préparer',
+  TO_VERIFY: 'À vérifier',
+  PENDING: 'En attente',
+  READY: 'Prêt',
+  ARCHIVED: 'Archivé',
 };
 
 export const formatStatus = (status: string): string => {

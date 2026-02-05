@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Upload, AlertCircle } from 'lucide-react';
-import { itemsApi } from '../services/api';
-import { ItemFormData, STATUS_OPTIONS, STATUS_LABELS } from '../types/item';
+import { itemsApi, listsApi } from '../services/api';
+import { ItemFormData, STATUS_OPTIONS, STATUS_LABELS, ItemList, getItemImageUrl } from '../types/item';
 import { Skeleton, SkeletonText } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 
@@ -11,45 +11,64 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export default function ItemForm() {
-  const { id } = useParams();
+  const { listId, itemId } = useParams();
   const navigate = useNavigate();
-  const isEditing = Boolean(id);
+  const isEditing = Boolean(itemId);
   const { showToast } = useToast();
 
-  const [loading, setLoading] = useState(isEditing);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [lists, setLists] = useState<ItemList[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ItemFormData>({
     defaultValues: {
       name: '',
-      category: '',
-      status: 'IN_STOCK',
+      itemListId: listId || '',
+      status: 'TO_PREPARE',
+      stock: 0,
     },
   });
 
   useEffect(() => {
-    if (isEditing && id) {
-      loadItem(id);
-    }
-  }, [id, isEditing]);
+    loadLists();
+  }, []);
 
-  const loadItem = async (itemId: string) => {
+  useEffect(() => {
+    if (isEditing && itemId) {
+      loadItem(itemId);
+    } else if (lists.length > 0) {
+      setLoading(false);
+    }
+  }, [itemId, isEditing, lists]);
+
+  const loadLists = async () => {
     try {
-      const item = await itemsApi.getById(itemId);
+      const response = await listsApi.getAll({ size: 100 });
+      setLists(response.content);
+    } catch (error) {
+      console.error('Failed to load lists:', error);
+      showToast('Échec du chargement des listes', 'error');
+    }
+  };
+
+  const loadItem = async (id: string) => {
+    try {
+      const item = await itemsApi.getById(id);
       reset({
         name: item.name,
-        category: item.category,
+        itemListId: item.itemListId,
         status: item.status,
+        stock: item.stock,
       });
-      if (item.imageBase64 && item.contentType) {
-        setImagePreview(`data:${item.contentType};base64,${item.imageBase64}`);
+      if (item.hasImage) {
+        setImagePreview(getItemImageUrl(item.id));
       }
     } catch (error) {
       console.error('Failed to load item:', error);
-      showToast('Failed to load item', 'error');
-      navigate('/inventory');
+      showToast('Échec du chargement de l\'article', 'error');
+      navigate(listId ? `/lists/${listId}` : '/lists');
     } finally {
       setLoading(false);
     }
@@ -59,11 +78,11 @@ export default function ItemForm() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        showToast('File size must be less than 10MB', 'error');
+        showToast('La taille du fichier doit être inférieure à 10 Mo', 'error');
         return;
       }
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        showToast('Only JPEG, PNG, GIF, and WebP images are allowed', 'error');
+        showToast('Seules les images JPEG, PNG, GIF et WebP sont autorisées', 'error');
         return;
       }
       setImageFile(file);
@@ -78,17 +97,17 @@ export default function ItemForm() {
   const onSubmit = async (data: ItemFormData) => {
     setSubmitting(true);
     try {
-      if (isEditing && id) {
-        await itemsApi.update(id, data, imageFile || undefined);
-        showToast('Item updated successfully', 'success');
+      if (isEditing && itemId) {
+        await itemsApi.update(itemId, data, imageFile || undefined);
+        showToast('Article mis à jour avec succès', 'success');
       } else {
         await itemsApi.create(data, imageFile || undefined);
-        showToast('Item created successfully', 'success');
+        showToast('Article créé avec succès', 'success');
       }
-      navigate('/inventory');
+      navigate(`/lists/${data.itemListId}`);
     } catch (error) {
       console.error('Failed to save item:', error);
-      showToast('Failed to save item. Please try again.', 'error');
+      showToast('Échec de l\'enregistrement. Veuillez réessayer.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +120,7 @@ export default function ItemForm() {
         <div className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 rounded-2xl border border-white/[0.06] shadow-premium p-8">
           <SkeletonText className="w-40 h-9 mb-8" />
           <div className="space-y-6">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(5)].map((_, i) => (
               <div key={i}>
                 <SkeletonText className="w-20 h-4 mb-2" />
                 <Skeleton className="w-full h-12 rounded-xl" />
@@ -120,32 +139,32 @@ export default function ItemForm() {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <button
-        onClick={() => navigate('/inventory')}
+        onClick={() => navigate(listId ? `/lists/${listId}` : '/lists')}
         className="inline-flex items-center text-stone-400 hover:text-stone-200 mb-6 transition-all duration-200 hover:-translate-x-0.5 group"
       >
         <ArrowLeft className="h-5 w-5 mr-1.5 transition-transform group-hover:-translate-x-0.5" />
-        Back to Inventory
+        Retour à la liste
       </button>
 
       <div className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 backdrop-blur-xl rounded-2xl border border-white/[0.06] shadow-premium p-8">
         <h1 className="font-display text-3xl text-stone-100 mb-8 tracking-tight">
-          {isEditing ? 'Edit Item' : 'Add New Item'}
+          {isEditing ? 'Modifier l\'article' : 'Ajouter un article'}
         </h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label className="block text-xs font-medium text-stone-400 mb-2 uppercase tracking-wider">
-              Name *
+              Nom *
             </label>
             <input
               type="text"
-              {...register('name', { required: 'Name is required' })}
+              {...register('name', { required: 'Le nom est requis' })}
               className={`w-full px-4 py-3 bg-surface-base/50 border rounded-xl text-stone-100 placeholder-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 hover:border-white/[0.12] ${
                 errors.name
                   ? 'border-red-400/40 focus:ring-red-400/30 focus:border-red-400/50'
                   : 'border-white/[0.08] focus:ring-amber-500/30 focus:border-amber-500/40'
               }`}
-              placeholder="Enter item name"
+              placeholder="Entrez le nom de l'article"
             />
             {errors.name && (
               <p className="mt-2 text-sm text-red-400 flex items-center">
@@ -157,19 +176,55 @@ export default function ItemForm() {
 
           <div>
             <label className="block text-xs font-medium text-stone-400 mb-2 uppercase tracking-wider">
-              Category
+              Liste *
             </label>
-            <input
-              type="text"
-              {...register('category')}
-              className="w-full px-4 py-3 bg-surface-base/50 border border-white/[0.08] rounded-xl text-stone-100 placeholder-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/40 hover:border-white/[0.12]"
-              placeholder="Enter category"
-            />
+            <select
+              {...register('itemListId', { required: 'La liste est requise' })}
+              className={`w-full px-4 py-3 bg-surface-base/50 border rounded-xl text-stone-100 cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 hover:border-white/[0.12] ${
+                errors.itemListId
+                  ? 'border-red-400/40 focus:ring-red-400/30 focus:border-red-400/50'
+                  : 'border-white/[0.08] focus:ring-amber-500/30 focus:border-amber-500/40'
+              }`}
+            >
+              <option value="">Sélectionnez une liste</option>
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>{list.name}</option>
+              ))}
+            </select>
+            {errors.itemListId && (
+              <p className="mt-2 text-sm text-red-400 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1.5" />
+                {errors.itemListId.message}
+              </p>
+            )}
           </div>
 
           <div>
             <label className="block text-xs font-medium text-stone-400 mb-2 uppercase tracking-wider">
-              Status
+              Stock
+            </label>
+            <input
+              type="number"
+              min="0"
+              {...register('stock', { valueAsNumber: true, min: { value: 0, message: 'Le stock ne peut pas être négatif' } })}
+              className={`w-full px-4 py-3 bg-surface-base/50 border rounded-xl text-stone-100 placeholder-stone-500 transition-all duration-200 focus:outline-none focus:ring-2 hover:border-white/[0.12] ${
+                errors.stock
+                  ? 'border-red-400/40 focus:ring-red-400/30 focus:border-red-400/50'
+                  : 'border-white/[0.08] focus:ring-amber-500/30 focus:border-amber-500/40'
+              }`}
+              placeholder="0"
+            />
+            {errors.stock && (
+              <p className="mt-2 text-sm text-red-400 flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1.5" />
+                {errors.stock.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-stone-400 mb-2 uppercase tracking-wider">
+              Statut
             </label>
             <select
               {...register('status')}
@@ -191,7 +246,7 @@ export default function ItemForm() {
                   <div className="mb-4">
                     <img
                       src={imagePreview}
-                      alt="Preview"
+                      alt="Aperçu"
                       className="mx-auto h-32 w-32 object-cover rounded-xl ring-2 ring-white/[0.1]"
                     />
                   </div>
@@ -200,7 +255,7 @@ export default function ItemForm() {
                 )}
                 <div className="flex text-sm text-stone-400 justify-center">
                   <label className="relative cursor-pointer rounded-md font-medium text-amber-400 hover:text-amber-300 transition-colors">
-                    <span>{imagePreview ? 'Change image' : 'Upload an image'}</span>
+                    <span>{imagePreview ? 'Changer l\'image' : 'Télécharger une image'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -209,7 +264,7 @@ export default function ItemForm() {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-stone-500">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-stone-500">PNG, JPG, GIF jusqu'à 10 Mo</p>
               </div>
             </div>
           </div>
@@ -217,17 +272,17 @@ export default function ItemForm() {
           <div className="flex gap-4 pt-4">
             <button
               type="button"
-              onClick={() => navigate('/inventory')}
+              onClick={() => navigate(listId ? `/lists/${listId}` : '/lists')}
               className="flex-1 px-5 py-3 bg-white/[0.04] text-stone-300 font-medium rounded-xl border border-white/[0.08] transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-stone-100"
             >
-              Cancel
+              Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="flex-1 px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-surface-base font-semibold rounded-xl shadow-glow-amber transition-all duration-200 hover:from-amber-400 hover:to-amber-500 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              {submitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
+              {submitting ? 'Enregistrement...' : isEditing ? 'Mettre à jour' : 'Ajouter'}
             </button>
           </div>
         </form>
