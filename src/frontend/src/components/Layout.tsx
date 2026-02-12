@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, List, Package } from 'lucide-react';
+import { UserMenu } from './UserMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 bg-gradient-to-b from-surface-elevated to-surface-base border-r border-white/[0.06] fixed h-full">
+      <aside className="w-64 bg-gradient-to-b from-surface-elevated to-surface-base border-r border-white/[0.06] fixed h-full flex flex-col">
         <div className="p-6 border-b border-white/[0.06]">
           <div className="flex items-center">
             <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-glow-amber">
@@ -29,7 +30,7 @@ export default function Layout({ children }: LayoutProps) {
 
         <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent mx-4" />
 
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 flex-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.to ||
               (item.to !== '/' && location.pathname.startsWith(item.to));
@@ -52,6 +53,10 @@ export default function Layout({ children }: LayoutProps) {
             );
           })}
         </nav>
+
+        <div className="p-4 border-t border-white/[0.06]">
+          <UserMenu />
+        </div>
       </aside>
 
       <main className="flex-1 ml-64 p-8">

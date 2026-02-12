@@ -3,10 +3,13 @@ package com.inventory.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inventory.dto.request.ItemRequest;
 import com.inventory.enums.ItemStatus;
+import com.inventory.enums.Role;
 import com.inventory.model.Item;
 import com.inventory.model.ItemList;
+import com.inventory.model.User;
 import com.inventory.repository.ItemListRepository;
 import com.inventory.repository.ItemRepository;
+import com.inventory.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("ItemController Integration Tests")
@@ -45,16 +48,28 @@ class ItemControllerIntegrationTest {
     @Autowired
     private ItemListRepository itemListRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private ItemList testList;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
         itemRepository.deleteAll();
         itemListRepository.deleteAll();
+        userRepository.deleteAll();
+
+        testUser = new User();
+        testUser.setEmail("test@example.com");
+        testUser.setPassword("password");
+        testUser.setRole(Role.USER);
+        testUser = userRepository.save(testUser);
 
         testList = new ItemList();
         testList.setName("Test List");
         testList.setCategory("Electronics");
+        testList.setUser(testUser);
         testList = itemListRepository.save(testList);
     }
 
@@ -193,6 +208,7 @@ class ItemControllerIntegrationTest {
             ItemList anotherList = new ItemList();
             anotherList.setName("Another List");
             anotherList.setCategory("Clothing");
+            anotherList.setUser(testUser);
             anotherList = itemListRepository.save(anotherList);
 
             createTestItem("Item 1", testList, ItemStatus.TO_PREPARE, 5);
@@ -230,6 +246,7 @@ class ItemControllerIntegrationTest {
             ItemList clothingList = new ItemList();
             clothingList.setName("Clothing List");
             clothingList.setCategory("Clothing");
+            clothingList.setUser(testUser);
             clothingList = itemListRepository.save(clothingList);
 
             createTestItem("Item 1", testList, ItemStatus.TO_PREPARE, 5);

@@ -4,6 +4,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    env_file: .env.dev
     environment:
       POSTGRES_DB: ${DB_NAME:-inventory}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
@@ -28,6 +29,7 @@ services:
 
   backend:
     build: ./src/backend
+    env_file: .env.dev
     ports:
       - "8080:8080"
     environment:
@@ -37,6 +39,15 @@ services:
       DB_NAME: ${DB_NAME:-inventory}
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      # JWT Authentication
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production-min-256-bits}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      # Cookie Configuration
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # Google OAuth2 (optional - set SPRING_PROFILES_ACTIVE=dev,oauth to enable)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy

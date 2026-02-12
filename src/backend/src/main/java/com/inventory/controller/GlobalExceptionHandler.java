@@ -1,9 +1,15 @@
 package com.inventory.controller;
 
 import com.inventory.exception.FileValidationException;
+import com.inventory.exception.ForbiddenException;
 import com.inventory.exception.ItemListNotFoundException;
 import com.inventory.exception.ItemNotFoundException;
+import com.inventory.exception.UnauthorizedException;
+import com.inventory.exception.UserAlreadyExistsException;
+import com.inventory.exception.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,6 +43,18 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", e.getMessage()));
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUserNotFound(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExistsException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", e.getMessage()));
+    }
+
     @ExceptionHandler(FileValidationException.class)
     public ResponseEntity<Map<String, String>> handleFileValidation(FileValidationException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -51,6 +69,30 @@ public class GlobalExceptionHandler {
                 .orElse("Validation failed");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", message));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Access denied"));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Invalid email or password"));
     }
 
     @ExceptionHandler(Exception.class)

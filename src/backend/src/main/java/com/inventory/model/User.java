@@ -1,6 +1,8 @@
 package com.inventory.model;
 
+import com.inventory.enums.Role;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,41 +15,47 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Table(name = "item_lists")
-public class ItemList {
+@Table(name = "users")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Version
-    private Long version;
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Column
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
+    @Column(name = "picture_url")
+    private String pictureUrl;
 
     @Column(nullable = false)
-    @NotBlank(message = "Name is required")
-    private String name;
+    private boolean enabled = true;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    private String category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private User user;
-
-    @OneToMany(mappedBy = "itemList", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<Item> items = new ArrayList<>();
+    private List<ItemList> itemLists = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Version
+    private Long version;
 
     @PrePersist
     protected void onCreate() {
@@ -58,15 +66,5 @@ public class ItemList {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public void addItem(Item item) {
-        items.add(item);
-        item.setItemList(this);
-    }
-
-    public void removeItem(Item item) {
-        items.remove(item);
-        item.setItemList(null);
     }
 }

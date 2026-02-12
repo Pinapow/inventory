@@ -13,7 +13,19 @@ import {
 
 const api = axios.create({
   baseURL: '/api/v1',
+  withCredentials: true,
 });
+
+// Redirect to login on 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const listsApi = {
   getAll: async (params: ItemListSearchParams = {}): Promise<PageResponse<ItemList>> => {
