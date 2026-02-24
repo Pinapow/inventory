@@ -1,47 +1,125 @@
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-base: #0C0A09;
-  --bg-surface: #1C1917;
-  --bg-elevated: #292524;
-  --accent: #F59E0B;
-  --accent-light: #FCD34D;
-  --text-primary: #FAFAF9;
-  --text-secondary: #A8A29E;
-  --text-tertiary: #78716C;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-}
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
 
-body {
-  @apply bg-surface-base text-stone-100 antialiased;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.08), transparent),
-    linear-gradient(180deg, #0C0A09 0%, #1C1917 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-}
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
 
-/* Noise texture overlay */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
-  z-index: 0;
-}
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
 
-/* Ensure content is above noise */
-#root {
-  position: relative;
-  z-index: 1;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+
+    --accent: 220 70% 82%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+
+    --radius: 0.75rem;
+
+    /* Status colors */
+    --status-prepare: 48 96% 89%;
+    --status-prepare-text: 28 73% 26%;
+    --status-prepare-border: 48 96% 76%;
+    --status-verify: 214 95% 93%;
+    --status-verify-text: 224 76% 48%;
+    --status-verify-border: 213 94% 78%;
+    --status-pending: 263 90% 95%;
+    --status-pending-text: 263 70% 50%;
+    --status-pending-border: 263 78% 80%;
+    --status-ready: 142 76% 93%;
+    --status-ready-text: 143 64% 24%;
+    --status-ready-border: 142 69% 73%;
+    --status-archived: 220 14% 96%;
+    --status-archived-text: 220 9% 46%;
+    --status-archived-border: 220 13% 83%;
+
+    /* Navy accent */
+    --peach: 220 70% 82%;
+    --peach-light: 220 60% 95%;
+    --peach-dark: 220 75% 48%;
+  }
+
+  .dark {
+    --background: 240 6% 6%;
+    --foreground: 0 0% 96%;
+
+    --card: 240 5% 8.5%;
+    --card-foreground: 0 0% 96%;
+
+    --popover: 240 5% 10%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 6% 6%;
+
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 4% 58%;
+
+    --accent: 220 80% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 220 80% 60%;
+
+    /* Status colors - vivid on dark */
+    --status-prepare: 38 80% 18%;
+    --status-prepare-text: 43 96% 70%;
+    --status-prepare-border: 40 70% 30%;
+    --status-verify: 217 70% 18%;
+    --status-verify-text: 213 94% 72%;
+    --status-verify-border: 215 60% 32%;
+    --status-pending: 263 55% 20%;
+    --status-pending-text: 263 80% 75%;
+    --status-pending-border: 263 50% 35%;
+    --status-ready: 150 50% 14%;
+    --status-ready-text: 142 72% 65%;
+    --status-ready-border: 145 45% 28%;
+    --status-archived: 240 4% 14%;
+    --status-archived-text: 240 4% 58%;
+    --status-archived-border: 240 4% 22%;
+
+    /* Navy accent - vivid on dark */
+    --peach: 220 80% 60%;
+    --peach-light: 220 50% 16%;
+    --peach-dark: 215 90% 70%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
+  }
 }
 
 /* Respect user preference for reduced motion */

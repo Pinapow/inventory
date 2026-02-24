@@ -32,28 +32,28 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-surface-base flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 backdrop-blur-xl rounded-2xl border border-white/[0.06] shadow-premium p-8 text-center animate-fade-in">
-            <div className="w-16 h-16 bg-red-400/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="h-8 w-8 text-red-400" />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="max-w-md w-full rounded-2xl border shadow-float p-8 text-center animate-fade-in">
+            <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
-            <h1 className="font-display text-2xl text-stone-100 mb-2">
-              Something went wrong
+            <h1 className="font-display text-2xl font-semibold mb-2">
+              Une erreur est survenue
             </h1>
-            <p className="text-stone-400 mb-6">
-              An unexpected error occurred. Please try refreshing the page.
+            <p className="text-muted-foreground mb-6">
+              Une erreur inattendue s'est produite. Veuillez rafraichir la page.
             </p>
             {this.state.error && (
-              <p className="text-xs text-stone-500 bg-surface-base/50 rounded-lg p-3 mb-6 font-mono break-all">
+              <p className="text-xs text-muted-foreground bg-muted rounded-lg p-3 mb-6 font-mono break-all">
                 {this.state.error.message}
               </p>
             )}
             <button
               onClick={this.handleRetry}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-surface-base font-semibold rounded-xl shadow-glow-amber transition-all duration-200 hover:from-amber-400 hover:to-amber-500 hover:-translate-y-0.5 active:translate-y-0"
+              className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-sm transition-all duration-200 hover:bg-primary/90 hover:-translate-y-0.5 active:translate-y-0"
             >
               <RefreshCw className="h-5 w-5 mr-2" />
-              Refresh Page
+              Rafraichir la page
             </button>
           </div>
         </div>

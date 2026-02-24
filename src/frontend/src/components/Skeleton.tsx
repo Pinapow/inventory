@@ -1,38 +1,30 @@
+import { Skeleton as UISkeleton } from '@/components/ui/skeleton';
+
 interface SkeletonProps {
   className?: string;
 }
 
 export function Skeleton({ className = '' }: SkeletonProps) {
-  return (
-    <div
-      className={`
-        bg-gradient-to-r from-surface-elevated/60 via-surface-overlay/40 to-surface-elevated/60
-        bg-[length:200%_100%]
-        animate-shimmer
-        rounded-lg
-        ${className}
-      `}
-    />
-  );
+  return <UISkeleton className={className} />;
 }
 
 export function SkeletonText({ className = '' }: SkeletonProps) {
-  return <Skeleton className={`h-4 ${className}`} />;
+  return <UISkeleton className={`h-4 ${className}`} />;
 }
 
 export function SkeletonCard() {
   return (
-    <div className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 rounded-2xl border border-white/[0.06] shadow-premium overflow-hidden">
-      <Skeleton className="h-48 rounded-none" />
-      <div className="p-4 space-y-3">
+    <div className="rounded-xl border bg-card overflow-hidden">
+      <UISkeleton className="h-48 rounded-none" />
+      <div className="p-5 space-y-3">
         <div className="flex justify-between items-start">
-          <SkeletonText className="w-2/3" />
-          <Skeleton className="h-6 w-20 rounded-md" />
+          <UISkeleton className="h-4 w-2/3" />
+          <UISkeleton className="h-6 w-20 rounded-full" />
         </div>
-        <SkeletonText className="w-1/3" />
+        <UISkeleton className="h-4 w-1/3" />
         <div className="flex gap-2 pt-2">
-          <Skeleton className="h-10 flex-1 rounded-xl" />
-          <Skeleton className="h-10 w-12 rounded-xl" />
+          <UISkeleton className="h-10 flex-1 rounded-lg" />
+          <UISkeleton className="h-10 w-12 rounded-lg" />
         </div>
       </div>
     </div>
@@ -41,12 +33,12 @@ export function SkeletonCard() {
 
 export function SkeletonStatCard() {
   return (
-    <div className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 rounded-2xl border border-white/[0.06] shadow-premium p-6">
+    <div className="rounded-xl border bg-card p-6">
       <div className="flex items-center">
-        <Skeleton className="h-12 w-12 rounded-xl" />
+        <UISkeleton className="h-12 w-12 rounded-xl" />
         <div className="ml-4 space-y-2 flex-1">
-          <SkeletonText className="w-20" />
-          <Skeleton className="h-8 w-16" />
+          <UISkeleton className="h-3 w-20" />
+          <UISkeleton className="h-8 w-16" />
         </div>
       </div>
     </div>

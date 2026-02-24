@@ -1,11 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Pencil, Trash2, List, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { listsApi } from '../services/api';
 import { ItemList, ItemListSearchParams } from '../types/item';
 import { SkeletonCard, SkeletonText, Skeleton } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { BlurFade } from '@/components/effects/blur-fade';
+import { SpotlightCard } from '@/components/effects/spotlight-card';
+import { StaggeredList, StaggeredItem } from '@/components/effects/staggered-list';
 
 export default function ListsPage() {
   const [lists, setLists] = useState<ItemList[]>([]);
@@ -26,14 +32,13 @@ export default function ListsPage() {
         sortBy: 'createdAt',
         sortDir: 'desc',
       };
-
       const response = await listsApi.getAll(params);
       setLists(response.content);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
     } catch (error) {
       console.error('Failed to load lists:', error);
-      showToast('Échec du chargement des listes', 'error');
+      showToast('Echec du chargement des listes', 'error');
     } finally {
       setLoading(false);
     }
@@ -50,11 +55,11 @@ export default function ListsPage() {
     setDeletingId(id);
     try {
       await listsApi.delete(id);
-      showToast('Liste supprimée avec succès', 'success');
+      showToast('Liste supprimee avec succes', 'success');
       loadLists();
     } catch (error) {
       console.error('Failed to delete list:', error);
-      showToast('Échec de la suppression de la liste', 'error');
+      showToast('Echec de la suppression de la liste', 'error');
     } finally {
       setDeletingId(null);
     }
@@ -63,12 +68,12 @@ export default function ListsPage() {
   if (loading && lists.length === 0) {
     return (
       <div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-8">
           <div className="space-y-2">
-            <SkeletonText className="w-28 h-9" />
-            <SkeletonText className="w-20" />
+            <SkeletonText className="w-32 h-10" />
+            <SkeletonText className="w-24 h-4" />
           </div>
-          <Skeleton className="h-12 w-40 rounded-xl" />
+          <Skeleton className="h-10 w-36 rounded-lg" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -81,112 +86,128 @@ export default function ListsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="font-display text-3xl text-stone-100 tracking-tight">Mes Listes</h1>
-          <p className="text-stone-500 mt-1">{totalElements} listes au total</p>
+          <BlurFade delay={0.1}>
+            <h1 className="font-display text-4xl font-semibold tracking-tight">Mes Listes</h1>
+          </BlurFade>
+          <BlurFade delay={0.2}>
+            <p className="text-muted-foreground mt-1">{totalElements} listes au total</p>
+          </BlurFade>
         </div>
-        <Link
-          to="/lists/new"
-          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-surface-base font-semibold rounded-xl shadow-glow-amber transition-all duration-200 hover:from-amber-400 hover:to-amber-500 hover:-translate-y-0.5 active:translate-y-0"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Nouvelle liste
-        </Link>
+        <BlurFade delay={0.2}>
+          <Link to="/lists/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle liste
+            </Button>
+          </Link>
+        </BlurFade>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {lists.map((list, index) => (
-          <div
-            key={list.id}
-            className="bg-gradient-to-br from-surface-elevated/80 to-surface-card/80 backdrop-blur-xl rounded-2xl border border-white/[0.06] shadow-premium overflow-hidden transition-all duration-300 hover:shadow-premium-hover hover:border-white/[0.1] hover:-translate-y-1 group animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-          >
-            <Link to={`/lists/${list.id}`} className="block p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <List className="h-6 w-6 text-amber-400" />
-                </div>
-                {list.category && (
-                  <span className="px-2.5 py-1 bg-stone-500/10 text-stone-400 rounded-md text-xs font-medium">
-                    {list.category}
-                  </span>
-                )}
-              </div>
-              <h3 className="font-semibold text-lg text-stone-100 tracking-tight mb-1 group-hover:text-amber-400 transition-colors">
-                {list.name}
-              </h3>
-              {list.description && (
-                <p className="text-stone-500 text-sm line-clamp-2 mb-3">{list.description}</p>
-              )}
-              <p className="text-stone-400 text-sm">
-                <span className="font-medium">{list.itemCount || 0}</span> articles
-              </p>
-            </Link>
-            <div className="px-6 pb-6">
-              <div className="flex gap-2">
-                <Link
-                  to={`/lists/${list.id}/edit`}
-                  className="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-white/[0.04] border border-white/[0.08] text-stone-300 font-medium rounded-xl transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-stone-100"
-                >
-                  <Pencil className="h-4 w-4 mr-1.5" />
-                  Modifier
+      <StaggeredList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence>
+          {lists.map((list, index) => (
+            <StaggeredItem key={list.id} className={index % 4 === 3 ? 'lg:col-span-2' : ''}>
+              <SpotlightCard className="group rounded-2xl border bg-card shadow-card transition-all duration-300 hover:shadow-elevated overflow-hidden">
+                <Link to={`/lists/${list.id}`} className="block p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-peach-light flex items-center justify-center">
+                      <span className="font-display text-xl font-bold text-foreground">
+                        {list.name[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    {list.category && (
+                      <Badge variant="secondary">{list.category}</Badge>
+                    )}
+                  </div>
+                  <h3 className="font-display text-lg font-semibold tracking-tight mb-1 group-hover:text-peach-dark transition-colors">
+                    {list.name}
+                  </h3>
+                  {list.description && (
+                    <p className="text-muted-foreground text-sm line-clamp-2 mb-3">{list.description}</p>
+                  )}
+                  <p className="text-muted-foreground text-sm">
+                    <span className="font-semibold text-foreground">{list.itemCount || 0}</span> articles
+                  </p>
                 </Link>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPendingDeleteId(list.id);
-                  }}
-                  disabled={deletingId === list.id}
-                  aria-label={`Supprimer ${list.name}`}
-                  className="inline-flex items-center justify-center px-3 py-2.5 border border-red-400/30 text-red-400 rounded-xl transition-all duration-200 hover:bg-red-400/10 hover:border-red-400/40 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  className="px-6 pb-6"
                 >
-                  <Trash2 className={`h-4 w-4 ${deletingId === list.id ? 'animate-pulse' : ''}`} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+                  <div className="flex gap-2">
+                    <Link to={`/lists/${list.id}/edit`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                        Modifier
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive hover:border-destructive"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPendingDeleteId(list.id);
+                      }}
+                      disabled={deletingId === list.id}
+                      aria-label={`Supprimer ${list.name}`}
+                    >
+                      <Trash2 className={`h-3.5 w-3.5 ${deletingId === list.id ? 'animate-pulse' : ''}`} />
+                    </Button>
+                  </div>
+                </motion.div>
+              </SpotlightCard>
+            </StaggeredItem>
+          ))}
+        </AnimatePresence>
+      </StaggeredList>
 
       {lists.length === 0 && !loading && (
-        <div className="text-center py-16 text-stone-500 animate-fade-in">
-          <FolderOpen className="h-16 w-16 mx-auto mb-4 opacity-30" />
-          <p className="text-lg">Aucune liste trouvée.</p>
-          <Link to="/lists/new" className="text-amber-400 hover:text-amber-300 transition-colors mt-2 inline-block">
-            Créer votre première liste
-          </Link>
+        <div className="text-center py-24 animate-fade-in relative">
+          <div className="text-[12rem] font-display font-bold text-muted/30 leading-none select-none">0</div>
+          <div className="-mt-16 relative z-10">
+            <FolderOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-lg text-muted-foreground mb-4">Aucune liste trouvee.</p>
+            <Link to="/lists/new">
+              <Button>Creer votre premiere liste</Button>
+            </Link>
+          </div>
         </div>
       )}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 mt-8">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="inline-flex items-center px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-stone-300 font-medium rounded-xl transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Précédent
-          </button>
-          <span className="text-stone-400">
+            Precedent
+          </Button>
+          <span className="text-sm text-muted-foreground">
             Page {page + 1} sur {totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="inline-flex items-center px-4 py-2 bg-white/[0.04] border border-white/[0.08] text-stone-300 font-medium rounded-xl transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Suivant
             <ChevronRight className="h-4 w-4 ml-1" />
-          </button>
+          </Button>
         </div>
       )}
 
       <ConfirmModal
         isOpen={pendingDeleteId !== null}
         title="Supprimer la liste"
-        message="Êtes-vous sûr de vouloir supprimer cette liste et tous ses articles ? Cette action est irréversible."
+        message="Etes-vous sur de vouloir supprimer cette liste et tous ses articles ? Cette action est irreversible."
         confirmLabel="Supprimer"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setPendingDeleteId(null)}
