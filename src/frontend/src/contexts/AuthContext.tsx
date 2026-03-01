@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, LoginCredentials } from '../types/auth';
+import { User, LoginCredentials, SignupCredentials } from '../types/auth';
 import { authApi } from '../services/authApi';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  loginWithGoogle: () => void;
+  signup: (credentials: SignupCredentials) => Promise<void>;
+  googleAuth: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
   isAdmin: boolean;
 }
@@ -37,8 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.user);
   };
 
-  const loginWithGoogle = () => {
-    authApi.loginWithGoogle();
+  const signup = async (credentials: SignupCredentials) => {
+    const response = await authApi.signup(credentials);
+    setUser(response.user);
+  };
+
+  const googleAuth = async (credential: string) => {
+    const response = await authApi.googleAuth(credential);
+    setUser(response.user);
   };
 
   const logout = async () => {
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, googleAuth, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

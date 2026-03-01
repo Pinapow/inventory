@@ -1,6 +1,8 @@
 package com.inventory.controller;
 
+import com.inventory.dto.request.GoogleAuthRequest;
 import com.inventory.dto.request.LoginRequest;
+import com.inventory.dto.request.SignupRequest;
 import com.inventory.dto.response.AuthResponse;
 import com.inventory.dto.response.UserResponse;
 import com.inventory.security.CustomUserDetails;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,27 @@ public class AuthController {
     ) {
         loginRateLimiter.checkRateLimit(httpRequest.getRemoteAddr());
         return ResponseEntity.ok(authService.login(request, response));
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<AuthResponse> signup(
+            @Valid @RequestBody SignupRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response
+    ) {
+        loginRateLimiter.checkRateLimit(httpRequest.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(authService.signup(request, response));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleAuth(
+            @Valid @RequestBody GoogleAuthRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response
+    ) {
+        loginRateLimiter.checkRateLimit(httpRequest.getRemoteAddr());
+        return ResponseEntity.ok(authService.googleAuth(request, response));
     }
 
     @PostMapping("/logout")

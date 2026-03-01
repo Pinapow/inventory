@@ -32,7 +32,8 @@ public class CookieService {
         if (cookieDomain != null && !cookieDomain.isEmpty()) {
             cookie.setDomain(cookieDomain);
         }
-        cookie.setAttribute("SameSite", "Strict");
+        // Lax: required for Google OAuth popup flow; safe because all state-changing endpoints use POST/PATCH/DELETE
+        cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
     }
 

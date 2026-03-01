@@ -1,43 +1,40 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
-import { loginSchema, LoginFormData } from '../schemas/auth.schemas';
+import { signupSchema, SignupFormData } from '../schemas/auth.schemas';
 import { getApiErrorMessage } from '../utils/errorUtils';
-import { GoogleAuthButton, GoogleDivider } from '../components/GoogleAuthButton';
+import { GoogleAuthButton, GoogleDivider } from '@/components/GoogleAuthButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DotPattern } from '@/components/effects/dot-pattern';
 import { BlurFade } from '@/components/effects/blur-fade';
 
-export function LoginPage() {
+export function SignupPage() {
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
+  } = useForm<SignupFormData>({ resolver: zodResolver(signupSchema) });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setServerError('');
     setLoading(true);
     try {
-      await login(data);
-      navigate(from, { replace: true });
+      await signup(data);
+      navigate('/', { replace: true });
     } catch (err: unknown) {
-      setServerError(getApiErrorMessage(err, 'Email ou mot de passe invalide'));
+      setServerError(getApiErrorMessage(err, 'Echec de la creation du compte'));
     } finally {
       setLoading(false);
     }
@@ -76,10 +73,10 @@ export function LoginPage() {
               </div>
             </BlurFade>
             <BlurFade delay={0.3}>
-              <h1 className="font-display text-4xl font-semibold tracking-tight mb-2">Inventory</h1>
+              <h1 className="font-display text-4xl font-semibold tracking-tight mb-2">Creer un compte</h1>
             </BlurFade>
             <BlurFade delay={0.4}>
-              <p className="text-muted-foreground">Connectez-vous pour gerer votre inventaire</p>
+              <p className="text-muted-foreground">Commencez a gerer votre inventaire</p>
             </BlurFade>
           </div>
 
@@ -115,12 +112,29 @@ export function LoginPage() {
                   type="password"
                   {...register('password')}
                   className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  placeholder="Entrez votre mot de passe"
+                  placeholder="Minimum 8 caracteres"
                 />
                 {errors.password && (
                   <p className="text-sm text-destructive flex items-center gap-1.5">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
                     {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  {...register('confirmPassword')}
+                  className={errors.confirmPassword ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  placeholder="Confirmez votre mot de passe"
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    {errors.confirmPassword.message}
                   </p>
                 )}
               </div>
@@ -137,27 +151,27 @@ export function LoginPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Connexion...
+                    Creation du compte...
                   </span>
                 ) : (
-                  'Se connecter'
+                  'Creer mon compte'
                 )}
               </Button>
             </form>
 
             <GoogleDivider />
             <GoogleAuthButton
-              label="Se connecter avec Google"
-              onSuccess={() => navigate(from, { replace: true })}
-              onError={(msg) => setServerError(msg)}
+              label="S'inscrire avec Google"
+              onSuccess={() => navigate('/', { replace: true })}
+              onError={(message) => setServerError(message)}
               disabled={loading}
             />
           </div>
 
           <p className="mt-6 text-center text-muted-foreground text-sm">
-            Nouveau sur Inventory ?{' '}
-            <Link to="/signup" className="text-foreground font-medium hover:underline">
-              Creer un compte
+            Vous avez deja un compte ?{' '}
+            <Link to="/login" className="text-foreground font-medium hover:underline">
+              Se connecter
             </Link>
           </p>
         </motion.div>
