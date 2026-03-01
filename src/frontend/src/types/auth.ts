@@ -19,6 +19,12 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface SignupCredentials {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export interface CreateUserRequest {
   email: string;
   password: string;

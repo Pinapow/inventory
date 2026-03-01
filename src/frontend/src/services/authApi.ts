@@ -1,10 +1,20 @@
 import http from './http';
-import { User, LoginCredentials, AuthResponse, CreateUserRequest, Role } from '../types/auth';
+import { User, LoginCredentials, SignupCredentials, AuthResponse, CreateUserRequest, Role } from '../types/auth';
 import { PageResponse } from '../types/item';
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await http.post<AuthResponse>('/auth/login', credentials);
+    return response.data;
+  },
+
+  signup: async (credentials: SignupCredentials): Promise<AuthResponse> => {
+    const response = await http.post<AuthResponse>('/auth/signup', credentials);
+    return response.data;
+  },
+
+  googleAuth: async (credential: string): Promise<AuthResponse> => {
+    const response = await http.post<AuthResponse>('/auth/google', { credential });
     return response.data;
   },
 
@@ -15,10 +25,6 @@ export const authApi = {
   getCurrentUser: async (): Promise<User> => {
     const response = await http.get<User>('/auth/me');
     return response.data;
-  },
-
-  loginWithGoogle: (): void => {
-    window.location.href = '/oauth2/authorization/google';
   },
 };
 

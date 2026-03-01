@@ -14,7 +14,8 @@ http.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+    const isAuthPage = window.location.pathname.includes('/login') || window.location.pathname.includes('/signup');
+    if (error.response?.status === 401 && !isAuthPage) {
       window.location.href = '/login';
     }
     return Promise.reject(error);

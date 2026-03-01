@@ -1,5 +1,5 @@
 # Development Docker Compose - includes local PostgreSQL
-# Usage: docker compose -f docker-compose.dev.yml up --build
+# Usage: docker compose --env-file .env.dev -f docker-compose.dev.yml up --build
 
 services:
   postgres:
@@ -45,15 +45,17 @@ services:
       # Cookie Configuration
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      # Google OAuth2 (optional - set SPRING_PROFILES_ACTIVE=dev,oauth to enable)
+      # Google OAuth2 (optional)
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
 
   frontend:
-    build: ./src/frontend
+    build:
+      context: ./src/frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "3000:80"
     depends_on:

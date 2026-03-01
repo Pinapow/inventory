@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.Environment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -15,16 +16,21 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @DisplayName("JwtService Tests")
 class JwtServiceTest {
 
     private JwtService jwtService;
+    private Environment environment;
     private static final String TEST_SECRET = "test-secret-key-for-testing-purposes-only-minimum-256-bits";
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
+        environment = mock(Environment.class);
+        when(environment.getActiveProfiles()).thenReturn(new String[]{"test"});
+        jwtService = new JwtService(environment);
         ReflectionTestUtils.setField(jwtService, "jwtSecret", TEST_SECRET);
         ReflectionTestUtils.setField(jwtService, "jwtExpirationMs", 86400000L);
     }
@@ -64,6 +70,16 @@ class JwtServiceTest {
             ReflectionTestUtils.setField(jwtService, "jwtSecret", "                                ");
             assertThatThrownBy(() -> jwtService.validateSecret())
                     .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("should reject dev secret in production profile")
+        void devSecretInProd_throwsException() {
+            when(environment.getActiveProfiles()).thenReturn(new String[]{"prod"});
+            ReflectionTestUtils.setField(jwtService, "jwtSecret", "dev-only-secret-key-minimum-32-characters-long");
+            assertThatThrownBy(() -> jwtService.validateSecret())
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Dev JWT secret detected in production");
         }
     }
 

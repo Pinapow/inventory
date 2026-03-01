@@ -11,8 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import org.springframework.core.env.Environment;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
@@ -20,17 +23,30 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
+    private static final String DEV_SECRET = "dev-only-secret-key-minimum-32-characters-long";
+
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
+    private final Environment environment;
+
+    public JwtService(Environment environment) {
+        this.environment = environment;
+    }
+
     @PostConstruct
     public void validateSecret() {
         if (jwtSecret == null || jwtSecret.isBlank() || jwtSecret.length() < 32) {
             throw new IllegalStateException(
                     "JWT_SECRET is not set or too short (minimum 32 characters). Application cannot start.");
+        }
+        boolean isProd = Arrays.asList(environment.getActiveProfiles()).contains("prod");
+        if (isProd && DEV_SECRET.equals(jwtSecret)) {
+            throw new IllegalStateException(
+                    "Dev JWT secret detected in production! Set a unique JWT_SECRET environment variable.");
         }
     }
 

@@ -19,13 +19,15 @@ services:
       # Cookie Configuration
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      # Google OAuth2 (optional - only needed if oauth profile is active)
+      # Google OAuth2 (optional)
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     restart: unless-stopped
 
   frontend:
-    build: ./src/frontend
+    build:
+      context: ./src/frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "3000:80"
     depends_on:
